@@ -95,7 +95,7 @@
     <script>
         const SUPABASE_URL = 'https://app.tech4ag.my';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentData = [];
 
@@ -140,7 +140,7 @@
 
             try {
                 // Cari peserta yang ada bengkel pada tarikh yang dipilih (sama ada sesi 1 atau sesi 2)
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
                     .or(`sesi_1_tarikh.eq.${tarikh},sesi_2_tarikh.eq.${tarikh}`)

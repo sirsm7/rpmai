@@ -141,7 +141,7 @@
     <script>
         const SUPABASE_URL = 'https://app.tech4ag.my';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const views = {
             check: document.getElementById('check-view'),
@@ -206,7 +206,7 @@
         async function loadSchools() {
             if (schoolsLoaded) return;
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('delima_data_sekolah')
                     .select('kod_sekolah, nama_sekolah')
                     .order('nama_sekolah', { ascending: true });
@@ -237,7 +237,7 @@
         async function checkIC(ic) {
             showLoading("Menyemak rekod...");
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
                     .eq('ic_no', ic)
@@ -296,7 +296,7 @@
                     sesi_2_tarikh: tarikhs.s2
                 };
 
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .insert([insertData])
                     .select()
@@ -326,7 +326,7 @@
             if(sesi === 2) updateData.sesi_2_hadir = true;
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .update(updateData)
                     .eq('id', currentRecord.id)
