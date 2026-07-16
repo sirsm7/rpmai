@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - eDaftar PPDAG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800">
+
+    <div id="login-view" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden border border-gray-100">
+            <div class="bg-slate-800 px-6 py-5 text-center">
+                <h1 class="text-2xl font-bold text-white">Log Masuk Admin</h1>
+                <p class="text-slate-300 text-sm mt-1">Sistem eDaftar PPDAG</p>
+            </div>
+            <div class="p-6 md:p-8">
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label for="admin_pwd" class="block text-sm font-medium text-gray-700 mb-1">Kata Laluan</label>
+                        <input type="password" id="admin_pwd" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">Log Masuk</button>
+                    <p id="login-error" class="text-red-500 text-sm text-center hidden-view">Kata laluan salah.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-view" class="hidden-view">
+        <nav class="bg-slate-800 text-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <span class="font-bold text-xl">Admin PPDAG</span>
+                    </div>
+                    <button id="btn-logout" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm font-medium transition-colors">Log Keluar</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white shadow rounded-lg p-6 border border-gray-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                    <div class="w-full md:w-1/3">
+                        <label for="filter_tarikh" class="block text-sm font-medium text-gray-700 mb-1">Pilih Tarikh Bengkel</label>
+                        <select id="filter_tarikh" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500">
+                            <option value="">-- Sila Pilih Tarikh --</option>
+                            <option value="2026-07-20">20 Julai 2026 (Matematik SR Sesi 1)</option>
+                            <option value="2026-07-21">21 Julai 2026 (Matematik SR Sesi 2)</option>
+                            <option value="2026-07-22">22 Julai 2026 (Sains SR Sesi 1)</option>
+                            <option value="2026-07-23">23 Julai 2026 (Sains SR Sesi 2)</option>
+                            <option value="2026-08-10">10 Ogos 2026 (Matematik SM / SK SM Sesi 1)</option>
+                            <option value="2026-08-11">11 Ogos 2026 (Matematik SM / SK SM Sesi 2)</option>
+                            <option value="2026-08-12">12 Ogos 2026 (Sains SM / Sains Tulen Sesi 1)</option>
+                            <option value="2026-08-13">13 Ogos 2026 (Sains SM / Sains Tulen Sesi 2)</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-3 w-full md:w-auto">
+                        <button id="btn-cari" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-colors">Papar Data</button>
+                        <button id="btn-pdf" class="flex-1 md:flex-none bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Muat Turun PDF</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bil</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Penuh</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No KP</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subjek</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sekolah</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Sila pilih tarikh dan klik "Papar Data".</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://app.tech4ag.my';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentData = [];
+
+        // Simple hardcoded login for demo/admin protection
+        const ADMIN_PWD = "admin";
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pwd = document.getElementById('admin_pwd').value;
+            if(pwd === ADMIN_PWD) {
+                document.getElementById('login-view').classList.add('hidden-view');
+                document.getElementById('dashboard-view').classList.remove('hidden-view');
+                document.getElementById('admin_pwd').value = '';
+                document.getElementById('login-error').classList.add('hidden-view');
+            } else {
+                document.getElementById('login-error').classList.remove('hidden-view');
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            document.getElementById('dashboard-view').classList.add('hidden-view');
+            document.getElementById('login-view').classList.remove('hidden-view');
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Sila pilih tarikh dan klik "Papar Data".</td></tr>';
+            document.getElementById('filter_tarikh').value = '';
+            document.getElementById('btn-pdf').disabled = true;
+            currentData = [];
+        });
+
+        document.getElementById('btn-cari').addEventListener('click', async () => {
+            const tarikh = document.getElementById('filter_tarikh').value;
+            const tbody = document.getElementById('table-body');
+            const btnPdf = document.getElementById('btn-pdf');
+
+            if(!tarikh) {
+                alert("Sila pilih tarikh.");
+                return;
+            }
+
+            tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Memuatkan data...</td></tr>';
+            btnPdf.disabled = true;
+            currentData = [];
+
+            try {
+                // Cari peserta yang ada bengkel pada tarikh yang dipilih (sama ada sesi 1 atau sesi 2)
+                const { data, error } = await supabase
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*')
+                    .or(`sesi_1_tarikh.eq.${tarikh},sesi_2_tarikh.eq.${tarikh}`)
+                    .order('nama_sekolah', { ascending: true })
+                    .order('nama_penuh', { ascending: true });
+
+                if (error) throw error;
+
+                currentData = data;
+
+                if(currentData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk tarikh ini.</td></tr>';
+                    return;
+                }
+
+                // Render jadual
+                let html = '';
+                currentData.forEach((row, i) => {
+                    html += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${i + 1}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${row.nama_penuh}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row.ic_no}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row.subjek}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500">${row.kod_sekolah} - ${row.nama_sekolah}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+                btnPdf.disabled = false;
+
+            } catch (err) {
+                console.error("Ralat ambil data:", err);
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-red-500">Berlaku ralat sistem. Sila cuba lagi.</td></tr>';
+            }
+        });
+
+        document.getElementById('btn-pdf').addEventListener('click', () => {
+            if(currentData.length === 0) return;
+
+            const tarikhRaw = document.getElementById('filter_tarikh').value;
+            const selectEl = document.getElementById('filter_tarikh');
+            const tajukTarikh = selectEl.options[selectEl.selectedIndex].text;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape'); // Mendatar untuk ruang lebih luas
+
+            // Tajuk PDF
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("BORANG KEHADIRAN BENGKEL PPDAG", 14, 15);
+            
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Tarikh / Sesi : ${tajukTarikh}`, 14, 22);
+
+            // Penyediaan Data Jadual
+            const tableData = currentData.map((row, i) => [
+                i + 1,
+                row.nama_penuh,
+                row.ic_no,
+                `${row.kod_sekolah}\n${row.nama_sekolah}`,
+                "" // Ruang kosong untuk tandatangan fizikal
+            ]);
+
+            // Cetak Jadual
+            doc.autoTable({
+                startY: 28,
+                head: [['Bil', 'Nama Penuh', 'No. Kad Pengenalan', 'Sekolah', 'Tandatangan']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [30, 41, 59], textColor: 255 }, // slate-800
+                styles: { fontSize: 10, cellPadding: 3, valign: 'middle' },
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 80 },
+                    2: { cellWidth: 40 },
+                    3: { cellWidth: 90 },
+                    4: { cellWidth: 40 } // Ruang tandatangan
+                },
+                didDrawCell: function(data) {
+                    // Pastikan ruang tandatangan cukup tinggi sedikit
+                    if (data.column.index === 4 && data.section === 'body') {
+                        // Boleh tambah logik garis di sini jika perlu, tapi 'grid' theme sudah memadai
+                    }
+                }
+            });
+
+            // Muat Turun
+            doc.save(`Kehadiran_${tarikhRaw}.pdf`);
+        });
+    </script>
+</body>
+</html>

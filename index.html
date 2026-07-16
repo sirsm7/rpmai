@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eDaftar PPDAG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hidden-view { display: none !important; }
+        .toast-enter { transform: translateY(0); opacity: 1; }
+        .toast-exit { transform: translateY(-100%); opacity: 0; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 transition-all duration-300 z-50 rounded-md shadow-lg px-6 py-3 text-white font-medium">
+        <span id="toast-message"></span>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-100">
+        <div class="bg-blue-600 px-6 py-5 text-center">
+            <h1 class="text-2xl font-bold text-white">eDaftar PPDAG</h1>
+            <p class="text-blue-100 text-sm mt-1">Sistem Pendaftaran & Kehadiran Bengkel</p>
+        </div>
+
+        <div class="p-6 md:p-8">
+            
+            <div id="loading-view" class="hidden-view text-center py-8">
+                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-500 font-medium" id="loading-text">Sila tunggu...</p>
+            </div>
+
+            <div id="check-view" class="space-y-6">
+                <div class="text-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">Semakan Kehadiran</h2>
+                    <p class="text-sm text-gray-500 mt-1">Sila masukkan No. Kad Pengenalan anda</p>
+                </div>
+                <form id="check-form" class="space-y-4">
+                    <div>
+                        <label for="ic_check" class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
+                        <input type="text" id="ic_check" required pattern="[0-9]+" placeholder="Contoh: 880101015566" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <p class="text-xs text-gray-400 mt-1">Tanpa sengkang (-)</p>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">Semak Status</button>
+                </form>
+            </div>
+
+            <div id="register-view" class="hidden-view space-y-5">
+                <div class="text-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Pendaftaran Baru</h2>
+                    <p class="text-sm text-gray-500 mt-1">Lengkapkan butiran di bawah</p>
+                </div>
+                <form id="register-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
+                        <input type="text" id="reg_ic" readonly class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 font-medium">
+                    </div>
+                    <div>
+                        <label for="reg_nama" class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh</label>
+                        <input type="text" id="reg_nama" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase">
+                    </div>
+                    <div>
+                        <label for="reg_subjek" class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
+                        <select id="reg_subjek" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">-- Pilih Subjek --</option>
+                            <option value="MATEMATIK (SR)">MATEMATIK (SR)</option>
+                            <option value="SAINS (SR)">SAINS (SR)</option>
+                            <option value="MATEMATIK (SM)">MATEMATIK (SM)</option>
+                            <option value="SAINS KOMPUTER (SM)">SAINS KOMPUTER (SM)</option>
+                            <option value="SAINS (SM)">SAINS (SM)</option>
+                            <option value="SAINS TULEN (SM)">SAINS TULEN (SM)</option>
+                        </select>
+                        <p id="reg_tarikh_info" class="text-xs text-blue-600 mt-1 font-medium min-h-[16px]"></p>
+                    </div>
+                    <div>
+                        <label for="reg_sekolah" class="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+                        <select id="reg_sekolah" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">-- Memuatkan Sekolah... --</option>
+                        </select>
+                    </div>
+                    <div class="pt-2 flex gap-3">
+                        <button type="button" id="btn-batal-reg" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2.5 rounded-lg transition-colors">Batal</button>
+                        <button type="submit" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors">Daftar & Teruskan</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="dashboard-view" class="hidden-view space-y-6">
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                    <h3 id="dash_nama" class="font-bold text-gray-800 uppercase"></h3>
+                    <p id="dash_ic" class="text-sm text-gray-600"></p>
+                    <div class="mt-3 pt-3 border-t border-blue-200 text-sm">
+                        <p><span class="font-semibold text-gray-700">Subjek:</span> <span id="dash_subjek" class="text-gray-800"></span></p>
+                        <p><span class="font-semibold text-gray-700">Sekolah:</span> <span id="dash_sekolah" class="text-gray-800"></span></p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-md font-bold text-gray-800 mb-3 text-center">Pengesahan Kehadiran</h4>
+                    <div class="space-y-3">
+                        
+                        <!-- Sesi 1 Card -->
+                        <div class="border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm">
+                            <div>
+                                <p class="font-bold text-gray-800">Sesi 1</p>
+                                <p id="dash_tarikh_1" class="text-sm text-gray-500"></p>
+                            </div>
+                            <button id="btn_hadir_1" class="w-full md:w-auto px-6 py-2 rounded-lg font-medium transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500">
+                                Sahkan Kehadiran
+                            </button>
+                        </div>
+
+                        <!-- Sesi 2 Card -->
+                        <div class="border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm">
+                            <div>
+                                <p class="font-bold text-gray-800">Sesi 2</p>
+                                <p id="dash_tarikh_2" class="text-sm text-gray-500"></p>
+                            </div>
+                            <button id="btn_hadir_2" class="w-full md:w-auto px-6 py-2 rounded-lg font-medium transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500">
+                                Sahkan Kehadiran
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="text-center pt-2">
+                    <button type="button" id="btn-keluar" class="text-gray-500 hover:text-gray-800 text-sm font-medium underline">Keluar / Pengguna Lain</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://app.tech4ag.my';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const views = {
+            check: document.getElementById('check-view'),
+            register: document.getElementById('register-view'),
+            dashboard: document.getElementById('dashboard-view'),
+            loading: document.getElementById('loading-view')
+        };
+
+        const subjectDatesMap = {
+            "MATEMATIK (SR)": { s1: "2026-07-20", s2: "2026-07-21" },
+            "SAINS (SR)": { s1: "2026-07-22", s2: "2026-07-23" },
+            "MATEMATIK (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
+            "SAINS KOMPUTER (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
+            "SAINS (SM)": { s1: "2026-08-12", s2: "2026-08-13" },
+            "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
+        };
+
+        let currentRecord = null;
+        let schoolsLoaded = false;
+
+        function showView(viewName) {
+            Object.values(views).forEach(v => v.classList.add('hidden-view'));
+            views[viewName].classList.remove('hidden-view');
+        }
+
+        function showLoading(text = "Sila tunggu...") {
+            document.getElementById('loading-text').textContent = text;
+            showView('loading');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast-container');
+            const msg = document.getElementById('toast-message');
+            
+            toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 transition-all duration-300 z-50 rounded-md shadow-lg px-6 py-3 text-white font-medium`;
+            
+            if(type === 'success') toast.classList.add('bg-green-600');
+            else if(type === 'error') toast.classList.add('bg-red-600');
+            else toast.classList.add('bg-blue-600');
+
+            msg.textContent = message;
+            
+            // Trigger animation
+            setTimeout(() => {
+                toast.classList.remove('-translate-y-full', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-full', 'opacity-0');
+            }, 3000);
+        }
+
+        function formatDateDisplay(dateString) {
+            if(!dateString) return "";
+            const [y, m, d] = dateString.split('-');
+            const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+            return `${d} ${months[parseInt(m)-1]} ${y}`;
+        }
+
+        async function loadSchools() {
+            if (schoolsLoaded) return;
+            try {
+                const { data, error } = await supabase
+                    .from('delima_data_sekolah')
+                    .select('kod_sekolah, nama_sekolah')
+                    .order('nama_sekolah', { ascending: true });
+
+                if (error) throw error;
+
+                const select = document.getElementById('reg_sekolah');
+                select.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+                
+                if(data && data.length > 0){
+                    data.forEach(s => {
+                        const option = document.createElement('option');
+                        option.value = s.kod_sekolah;
+                        option.textContent = `${s.kod_sekolah} - ${s.nama_sekolah}`;
+                        option.dataset.nama = s.nama_sekolah;
+                        select.appendChild(option);
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Tiada data sekolah</option>';
+                }
+                schoolsLoaded = true;
+            } catch (err) {
+                console.error("Ralat muat sekolah:", err);
+                showToast("Gagal memuat senarai sekolah", "error");
+            }
+        }
+
+        async function checkIC(ic) {
+            showLoading("Menyemak rekod...");
+            try {
+                const { data, error } = await supabase
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*')
+                    .eq('ic_no', ic)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+
+                if (data) {
+                    currentRecord = data;
+                    setupDashboard();
+                    showView('dashboard');
+                    showToast("Rekod ditemui", "success");
+                } else {
+                    // New Registration
+                    document.getElementById('reg_ic').value = ic;
+                    await loadSchools();
+                    showView('register');
+                    showToast("Rekod tidak ditemui. Sila daftar.", "info");
+                }
+            } catch (err) {
+                console.error("Ralat semakan:", err);
+                showToast("Ralat sistem", "error");
+                showView('check');
+            }
+        }
+
+        async function registerUser(e) {
+            e.preventDefault();
+            const ic = document.getElementById('reg_ic').value;
+            const nama = document.getElementById('reg_nama').value.toUpperCase();
+            const subjek = document.getElementById('reg_subjek').value;
+            
+            const selSekolah = document.getElementById('reg_sekolah');
+            const kodSekolah = selSekolah.value;
+            const namaSekolah = selSekolah.options[selSekolah.selectedIndex].dataset.nama;
+
+            if(!ic || !nama || !subjek || !kodSekolah) {
+                showToast("Sila lengkapkan semua maklumat", "error");
+                return;
+            }
+
+            const tarikhs = subjectDatesMap[subjek];
+            
+            showLoading("Menyimpan pendaftaran...");
+
+            try {
+                const insertData = {
+                    ic_no: ic,
+                    nama_penuh: nama,
+                    subjek: subjek,
+                    kod_sekolah: kodSekolah,
+                    nama_sekolah: namaSekolah,
+                    sesi_1_tarikh: tarikhs.s1,
+                    sesi_2_tarikh: tarikhs.s2
+                };
+
+                const { data, error } = await supabase
+                    .from('edaftar_bengkel_ppdag')
+                    .insert([insertData])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                currentRecord = data;
+                document.getElementById('register-form').reset();
+                setupDashboard();
+                showView('dashboard');
+                showToast("Pendaftaran berjaya", "success");
+            } catch (err) {
+                console.error("Ralat daftar:", err);
+                showToast("Gagal mendaftar. No KP mungkin wujud.", "error");
+                showView('register');
+            }
+        }
+
+        async function markAttendance(sesi) {
+            if(!currentRecord) return;
+            
+            showLoading("Mengesahkan kehadiran...");
+            
+            const updateData = {};
+            if(sesi === 1) updateData.sesi_1_hadir = true;
+            if(sesi === 2) updateData.sesi_2_hadir = true;
+
+            try {
+                const { data, error } = await supabase
+                    .from('edaftar_bengkel_ppdag')
+                    .update(updateData)
+                    .eq('id', currentRecord.id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                currentRecord = data;
+                setupDashboard();
+                showView('dashboard');
+                showToast(`Kehadiran Sesi ${sesi} disahkan`, "success");
+            } catch (err) {
+                console.error("Ralat hadir:", err);
+                showToast("Gagal mengesahkan kehadiran", "error");
+                showView('dashboard');
+            }
+        }
+
+        function setupDashboard() {
+            if(!currentRecord) return;
+
+            document.getElementById('dash_nama').textContent = currentRecord.nama_penuh;
+            document.getElementById('dash_ic').textContent = currentRecord.ic_no;
+            document.getElementById('dash_subjek').textContent = currentRecord.subjek;
+            document.getElementById('dash_sekolah').textContent = `${currentRecord.kod_sekolah} - ${currentRecord.nama_sekolah}`;
+
+            document.getElementById('dash_tarikh_1').textContent = formatDateDisplay(currentRecord.sesi_1_tarikh);
+            document.getElementById('dash_tarikh_2').textContent = formatDateDisplay(currentRecord.sesi_2_tarikh);
+
+            const btn1 = document.getElementById('btn_hadir_1');
+            const btn2 = document.getElementById('btn_hadir_2');
+
+            // Set state Button 1
+            if(currentRecord.sesi_1_hadir) {
+                btn1.textContent = "Telah Hadir";
+                btn1.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-green-100 text-green-800 cursor-not-allowed border border-green-200";
+                btn1.disabled = true;
+            } else {
+                btn1.textContent = "Sahkan Kehadiran";
+                btn1.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
+                btn1.disabled = false;
+                btn1.onclick = () => markAttendance(1);
+            }
+
+            // Set state Button 2
+            if(currentRecord.sesi_2_hadir) {
+                btn2.textContent = "Telah Hadir";
+                btn2.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-green-100 text-green-800 cursor-not-allowed border border-green-200";
+                btn2.disabled = true;
+            } else {
+                btn2.textContent = "Sahkan Kehadiran";
+                btn2.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
+                btn2.disabled = false;
+                btn2.onclick = () => markAttendance(2);
+            }
+        }
+
+        document.getElementById('check-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const ic = document.getElementById('ic_check').value.trim();
+            if(ic) checkIC(ic);
+        });
+
+        document.getElementById('register-form').addEventListener('submit', registerUser);
+
+        document.getElementById('reg_subjek').addEventListener('change', (e) => {
+            const info = document.getElementById('reg_tarikh_info');
+            const val = e.target.value;
+            if(val && subjectDatesMap[val]) {
+                const dates = subjectDatesMap[val];
+                info.textContent = `Tarikh: Sesi 1 (${formatDateDisplay(dates.s1)}), Sesi 2 (${formatDateDisplay(dates.s2)})`;
+            } else {
+                info.textContent = "";
+            }
+        });
+
+        document.getElementById('btn-batal-reg').addEventListener('click', () => {
+            document.getElementById('ic_check').value = '';
+            document.getElementById('reg_tarikh_info').textContent = '';
+            document.getElementById('register-form').reset();
+            showView('check');
+        });
+
+        document.getElementById('btn-keluar').addEventListener('click', () => {
+            currentRecord = null;
+            document.getElementById('ic_check').value = '';
+            showView('check');
+        });
+
+    </script>
+</body>
+</html>
