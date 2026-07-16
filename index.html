@@ -6,15 +6,31 @@
     <title>eDaftar PPDAG</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- TomSelect untuk carian canggih -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .hidden-view { display: none !important; }
         .toast-enter { transform: translateY(0); opacity: 1; }
         .toast-exit { transform: translateY(-100%); opacity: 0; }
+        
+        /* TomSelect override untuk padan dengan Tailwind */
+        .ts-control {
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-color: #d1d5db;
+        }
+        .ts-control.focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
     <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 transition-all duration-300 z-50 rounded-md shadow-lg px-6 py-3 text-white font-medium">
         <span id="toast-message"></span>
@@ -80,7 +96,7 @@
                     </div>
                     <div>
                         <label for="reg_sekolah" class="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
-                        <select id="reg_sekolah" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <select id="reg_sekolah" required placeholder="Cari nama sekolah..." class="w-full border-gray-300 rounded-lg">
                             <option value="">-- Memuatkan Sekolah... --</option>
                         </select>
                     </div>
@@ -137,6 +153,10 @@
 
         </div>
     </div>
+    
+    <div class="mt-6 text-center">
+        <a href="admin.html" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">Ke Log Masuk Admin &rarr;</a>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://app.tech4ag.my';
@@ -161,6 +181,8 @@
 
         let currentRecord = null;
         let schoolsLoaded = false;
+        let schoolMap = {};
+        let tomSelectInstance = null;
 
         function showView(viewName) {
             Object.values(views).forEach(v => v.classList.add('hidden-view'));
@@ -184,7 +206,6 @@
 
             msg.textContent = message;
             
-            // Trigger animation
             setTimeout(() => {
                 toast.classList.remove('-translate-y-full', 'opacity-0');
                 toast.classList.add('translate-y-0', 'opacity-100');
@@ -214,19 +235,31 @@
                 if (error) throw error;
 
                 const select = document.getElementById('reg_sekolah');
-                select.innerHTML = '<option value="">-- Pilih Sekolah --</option>';
+                select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
                 
                 if(data && data.length > 0){
                     data.forEach(s => {
+                        schoolMap[s.kod_sekolah] = s.nama_sekolah;
                         const option = document.createElement('option');
                         option.value = s.kod_sekolah;
-                        option.textContent = `${s.kod_sekolah} - ${s.nama_sekolah}`;
-                        option.dataset.nama = s.nama_sekolah;
+                        // Papar Nama Sekolah didahului kod untuk mudahkan carian
+                        option.textContent = `${s.nama_sekolah} (${s.kod_sekolah})`;
                         select.appendChild(option);
                     });
-                } else {
-                    select.innerHTML = '<option value="">Tiada data sekolah</option>';
                 }
+
+                // Inisialisasi TomSelect
+                if(tomSelectInstance) tomSelectInstance.destroy();
+                
+                tomSelectInstance = new TomSelect("#reg_sekolah", {
+                    create: false,
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    },
+                    placeholder: "Cari nama sekolah atau kod...",
+                });
+
                 schoolsLoaded = true;
             } catch (err) {
                 console.error("Ralat muat sekolah:", err);
@@ -253,7 +286,6 @@
                     showView('dashboard');
                     showToast("Rekod ditemui", "success");
                 } else {
-                    // New Registration
                     document.getElementById('reg_ic').value = ic;
                     await loadSchools();
                     showView('register');
@@ -271,16 +303,14 @@
             const ic = document.getElementById('reg_ic').value;
             const nama = document.getElementById('reg_nama').value.toUpperCase();
             const subjek = document.getElementById('reg_subjek').value;
-            
-            const selSekolah = document.getElementById('reg_sekolah');
-            const kodSekolah = selSekolah.value;
-            const namaSekolah = selSekolah.options[selSekolah.selectedIndex].dataset.nama;
+            const kodSekolah = document.getElementById('reg_sekolah').value;
 
             if(!ic || !nama || !subjek || !kodSekolah) {
                 showToast("Sila lengkapkan semua maklumat", "error");
                 return;
             }
 
+            const namaSekolah = schoolMap[kodSekolah];
             const tarikhs = subjectDatesMap[subjek];
             
             showLoading("Menyimpan pendaftaran...");
@@ -305,7 +335,11 @@
                 if (error) throw error;
 
                 currentRecord = data;
+                
+                // Reset form and tomselect
                 document.getElementById('register-form').reset();
+                if(tomSelectInstance) tomSelectInstance.clear();
+                
                 setupDashboard();
                 showView('dashboard');
                 showToast("Pendaftaran berjaya", "success");
@@ -360,7 +394,6 @@
             const btn1 = document.getElementById('btn_hadir_1');
             const btn2 = document.getElementById('btn_hadir_2');
 
-            // Set state Button 1
             if(currentRecord.sesi_1_hadir) {
                 btn1.textContent = "Telah Hadir";
                 btn1.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-green-100 text-green-800 cursor-not-allowed border border-green-200";
@@ -372,7 +405,6 @@
                 btn1.onclick = () => markAttendance(1);
             }
 
-            // Set state Button 2
             if(currentRecord.sesi_2_hadir) {
                 btn2.textContent = "Telah Hadir";
                 btn2.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-green-100 text-green-800 cursor-not-allowed border border-green-200";
@@ -408,6 +440,7 @@
             document.getElementById('ic_check').value = '';
             document.getElementById('reg_tarikh_info').textContent = '';
             document.getElementById('register-form').reset();
+            if(tomSelectInstance) tomSelectInstance.clear();
             showView('check');
         });
 
