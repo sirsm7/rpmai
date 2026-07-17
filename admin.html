@@ -132,16 +132,16 @@
             <div class="bg-white shadow-sm rounded-xl p-6 border border-gray-200">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                     <div class="w-full md:w-1/2">
-                        <label for="filter_subjek" class="block text-sm font-medium text-gray-700 mb-1">Saring Mengikut Subjek / Kumpulan</label>
+                        <label for="filter_subjek" class="block text-sm font-medium text-gray-700 mb-1">Saring Mengikut Kumpulan</label>
+                        <!-- SURGICAL EDIT START: Gabung subjek SM -->
                         <select id="filter_subjek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 bg-gray-50">
                             <option value="">-- Sila Pilih Kumpulan --</option>
-                            <option value="MATEMATIK (SR)">MATEMATIK (SR) - 20 & 21 Julai 2026</option>
-                            <option value="SAINS (SR)">SAINS (SR) - 22 & 23 Julai 2026</option>
-                            <option value="MATEMATIK (SM)">MATEMATIK (SM) - 10 & 11 Ogos 2026</option>
-                            <option value="SAINS KOMPUTER (SM)">SAINS KOMPUTER (SM) - 10 & 11 Ogos 2026</option>
-                            <option value="SAINS (SM)">SAINS (SM) - 12 & 13 Ogos 2026</option>
-                            <option value="SAINS TULEN (SM)">SAINS TULEN (SM) - 12 & 13 Ogos 2026</option>
+                            <option value="G1">MATEMATIK (SR) - 20 & 21 Julai 2026</option>
+                            <option value="G2">SAINS (SR) - 22 & 23 Julai 2026</option>
+                            <option value="G3">MATEMATIK & SAINS KOMPUTER (SM) - 10 & 11 Ogos 2026</option>
+                            <option value="G4">SAINS & SAINS TULEN (SM) - 12 & 13 Ogos 2026</option>
                         </select>
+                        <!-- SURGICAL EDIT END -->
                     </div>
                     <div class="flex gap-3 w-full md:w-auto">
                         <button id="btn-cari" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors">Papar</button>
@@ -201,13 +201,22 @@
         let editingId = null;
         let deletingId = null;
 
+        // SURGICAL EDIT START: Mapping dinamik Kumpulan & Sesi
+        const groupConfig = {
+            "G1": { label: "MATEMATIK (SR)", subjects: ["MATEMATIK (SR)"], d1: "20 Julai 2026", d2: "21 Julai 2026", exemptS1: 1, exemptS2: 2 },
+            "G2": { label: "SAINS (SR)", subjects: ["SAINS (SR)"], d1: "22 Julai 2026", d2: "23 Julai 2026", exemptS1: 3, exemptS2: 4 },
+            "G3": { label: "MATEMATIK & SAINS KOMPUTER (SM)", subjects: ["MATEMATIK (SM)", "SAINS KOMPUTER (SM)"], d1: "10 Ogos 2026", d2: "11 Ogos 2026", exemptS1: 5, exemptS2: 6 },
+            "G4": { label: "SAINS & SAINS TULEN (SM)", subjects: ["SAINS (SM)", "SAINS TULEN (SM)"], d1: "12 Ogos 2026", d2: "13 Ogos 2026", exemptS1: 7, exemptS2: 8 }
+        };
+        // SURGICAL EDIT END
+
         const subjectDatesMap = {
-            "MATEMATIK (SR)": { d1: "20 Julai 2026", d2: "21 Julai 2026", s1: "2026-07-20", s2: "2026-07-21" },
-            "SAINS (SR)": { d1: "22 Julai 2026", d2: "23 Julai 2026", s1: "2026-07-22", s2: "2026-07-23" },
-            "MATEMATIK (SM)": { d1: "10 Ogos 2026", d2: "11 Ogos 2026", s1: "2026-08-10", s2: "2026-08-11" },
-            "SAINS KOMPUTER (SM)": { d1: "10 Ogos 2026", d2: "11 Ogos 2026", s1: "2026-08-10", s2: "2026-08-11" },
-            "SAINS (SM)": { d1: "12 Ogos 2026", d2: "13 Ogos 2026", s1: "2026-08-12", s2: "2026-08-13" },
-            "SAINS TULEN (SM)": { d1: "12 Ogos 2026", d2: "13 Ogos 2026", s1: "2026-08-12", s2: "2026-08-13" }
+            "MATEMATIK (SR)": { s1: "2026-07-20", s2: "2026-07-21" },
+            "SAINS (SR)": { s1: "2026-07-22", s2: "2026-07-23" },
+            "MATEMATIK (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
+            "SAINS KOMPUTER (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
+            "SAINS (SM)": { s1: "2026-08-12", s2: "2026-08-13" },
+            "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
         };
 
         function showMsg(title, body) {
@@ -280,15 +289,17 @@
         }
 
         async function fetchTableData() {
-            const subjek = document.getElementById('filter_subjek').value;
+            const selGroup = document.getElementById('filter_subjek').value;
             const tbody = document.getElementById('table-body');
             const btnPdf = document.getElementById('btn-pdf');
             const summary = document.getElementById('summary-cards');
 
-            if(!subjek) {
+            if(!selGroup) {
                 showMsg("Ralat", "Sila pilih kumpulan subjek.");
                 return;
             }
+
+            const conf = groupConfig[selGroup];
 
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
             btnPdf.disabled = true;
@@ -296,13 +307,15 @@
             currentData = [];
 
             try {
+                // SURGICAL EDIT START: Tukar carian GURU guna .in
                 const { data: guruData, error: guruErr } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
-                    .eq('subjek', subjek)
+                    .in('subjek', conf.subjects)
                     .eq('peranan', 'GURU')
                     .order('nama_sekolah', { ascending: true })
                     .order('nama_penuh', { ascending: true });
+                // SURGICAL EDIT END
 
                 if (guruErr) throw guruErr;
 
@@ -354,6 +367,8 @@
 
         function renderTable() {
             const tbody = document.getElementById('table-body');
+            const selGroup = document.getElementById('filter_subjek').value;
+            const conf = groupConfig[selGroup];
             let html = '';
             
             currentData.forEach((row, i) => {
@@ -369,31 +384,35 @@
 
                 const role = row.peranan || 'GURU';
                 const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
-                const totalSessions = isExempt ? 8 : 2;
-                let badgesHtml = '';
+                
+                // SURGICAL EDIT START: Papar 2 Sesi Tepat
+                const hadir1 = isExempt ? row[`sesi_${conf.exemptS1}_hadir`] : row.sesi_1_hadir;
+                const hadir2 = isExempt ? row[`sesi_${conf.exemptS2}_hadir`] : row.sesi_2_hadir;
 
-                for(let s = 1; s <= totalSessions; s++) {
-                    const hadir = row[`sesi_${s}_hadir`];
-                    const badge = hadir 
-                        ? '<span class="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
-                        : '<span class="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
-                    badgesHtml += `<div class="text-xs text-slate-500 flex items-center justify-between w-[4.5rem]">S${s}: ${badge}</div>`;
-                }
+                const badge1 = hadir1 
+                    ? '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
+                    : '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+                
+                const badge2 = hadir2 
+                    ? '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
+                    : '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+                // SURGICAL EDIT END
 
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">${i + 1}</td>
                         <td class="px-4 py-4">
                             <div class="text-sm font-bold text-slate-900 uppercase">${row.nama_penuh}</div>
-                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${role}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${role} ${!isExempt && row.subjek ? `(${row.subjek})` : ''}</div>
                         </td>
                         <td class="px-4 py-4 text-sm text-slate-600">
                             <div class="font-medium">${row.kod_sekolah || '-'}</div>
                             <div class="text-xs truncate max-w-xs">${row.nama_sekolah || ''}</div>
                         </td>
                         <td class="px-4 py-4 text-center">
-                            <div class="flex flex-wrap gap-x-3 gap-y-1 justify-center max-w-[220px] mx-auto">
-                                ${badgesHtml}
+                            <div class="flex flex-col gap-1 items-center">
+                                <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 1: ${badge1}</div>
+                                <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 2: ${badge2}</div>
                             </div>
                         </td>
                         <td class="px-4 py-4 text-right text-sm font-medium whitespace-nowrap">
@@ -530,8 +549,8 @@
             btnPdf.textContent = "Menjana...";
             btnPdf.disabled = true;
 
-            const subjek = document.getElementById('filter_subjek').value;
-            const dates = subjectDatesMap[subjek];
+            const selGroup = document.getElementById('filter_subjek').value;
+            const conf = groupConfig[selGroup];
             
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape'); 
@@ -539,6 +558,7 @@
             const logoData = await getLogoBase64();
             let startYTable = 38;
 
+            // SURGICAL EDIT START: Ubah header PDF guna label konfig
             if (logoData) {
                 doc.addImage(logoData, 'PNG', 14, 10, 32, 24); 
                 
@@ -548,14 +568,14 @@
                 
                 doc.setFontSize(11);
                 doc.setFont("helvetica", "normal");
-                doc.text(`Subjek: ${subjek}`, 48, 25);
+                doc.text(`Kumpulan: ${conf.label}`, 48, 25);
             } else {
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
                 doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 14, 18);
                 doc.setFontSize(11);
                 doc.setFont("helvetica", "normal");
-                doc.text(`Subjek: ${subjek}`, 14, 25);
+                doc.text(`Kumpulan: ${conf.label}`, 14, 25);
             }
 
             const tableData = currentData.map((row, i) => {
@@ -569,9 +589,10 @@
                         ""
                     ];
                 }
+                const role = row.peranan || 'GURU';
                 return [
                     i + 1,
-                    `${row.nama_penuh}\n(${row.peranan || 'GURU'})`,
+                    `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`,
                     row.ic_no,
                     `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
                     "", 
@@ -586,8 +607,8 @@
                     'Nama Penuh & Peranan', 
                     'No. Kad Pengenalan', 
                     'Sekolah', 
-                    `Sesi 1\n(${dates.d1})`, 
-                    `Sesi 2\n(${dates.d2})`
+                    `Sesi 1\n(${conf.d1})`, 
+                    `Sesi 2\n(${conf.d2})`
                 ]],
                 body: tableData,
                 theme: 'grid',
@@ -608,8 +629,9 @@
                 }
             });
 
-            const safeFileName = subjek.replace(/[^a-zA-Z0-9]/g, '_');
+            const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
             doc.save(`Kehadiran_${safeFileName}.pdf`);
+            // SURGICAL EDIT END
             
             btnPdf.textContent = originalText;
             btnPdf.disabled = false;
