@@ -1,4 +1,3 @@
-<!-- SURGICAL EDIT START: Tambah paparan peranan dalam jadual & ubah janaan PDF -->
 <!DOCTYPE html>
 <html lang="ms">
 <head>
@@ -56,6 +55,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
                     <input type="text" id="edit_ic" required pattern="[0-9]+" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50" readonly title="No KP tidak boleh diubah untuk elak ralat integrasi.">
                 </div>
+                <!-- SURGICAL EDIT START: Peranan dropdown dalam modal -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Peranan</label>
                     <select id="edit_peranan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
@@ -63,6 +63,7 @@
                         <option value="PEGAWAI">PEGAWAI</option>
                     </select>
                 </div>
+                <!-- SURGICAL EDIT END -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
                     <select id="edit_subjek" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
@@ -232,12 +233,12 @@
         async function loadSchools() {
             if (schoolsLoaded) return;
             try {
-                // SURGICAL EDIT START: Tukar jadual sekolah
+                /* SURGICAL EDIT START: Tukar jadual sekolah ke smpid_sekolah_data */
                 const { data, error } = await supabaseClient
                     .from('smpid_sekolah_data')
                     .select('kod_sekolah, nama_sekolah')
                     .order('nama_sekolah', { ascending: true });
-                // SURGICAL EDIT END
+                /* SURGICAL EDIT END */
 
                 if (error) throw error;
 
@@ -283,16 +284,35 @@
             currentData = [];
 
             try {
-                const { data, error } = await supabaseClient
+                /* SURGICAL EDIT START: Tarik GURU dan PEGAWAI berasingan, pad 10 ruang */
+                const { data: guruData, error: guruErr } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
                     .eq('subjek', subjek)
                     .order('nama_sekolah', { ascending: true })
                     .order('nama_penuh', { ascending: true });
 
-                if (error) throw error;
+                if (guruErr) throw guruErr;
 
-                currentData = data;
+                const { data: pegData, error: pegErr } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*')
+                    .eq('peranan', 'PEGAWAI')
+                    .order('nama_penuh', { ascending: true });
+
+                if (pegErr) throw pegErr;
+
+                // Tapisan pastikan PEGAWAI tiada dalam senarai Guru (jika ralat data)
+                const filteredGuru = (guruData || []).filter(r => r.peranan !== 'PEGAWAI');
+                let paddedPegawai = [...(pegData || [])];
+                
+                // Pastikan ruang PEGAWAI minimum 10
+                while(paddedPegawai.length < 10) {
+                    paddedPegawai.push({ isDummy: true });
+                }
+
+                currentData = [...paddedPegawai, ...filteredGuru];
+                /* SURGICAL EDIT END */
 
                 if(currentData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
@@ -315,6 +335,18 @@
             let html = '';
             
             currentData.forEach((row, i) => {
+                /* SURGICAL EDIT START: Papar baris dummy untuk PEGAWAI kosong */
+                if(row.isDummy) {
+                    html += `
+                        <tr class="bg-slate-50/50">
+                            <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-400 text-center">${i + 1}</td>
+                            <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Ruang Pegawai (Kosong)</td>
+                        </tr>
+                    `;
+                    return;
+                }
+                /* SURGICAL EDIT END */
+
                 const s1Badge = row.sesi_1_hadir 
                     ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
                     : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
@@ -323,7 +355,6 @@
                     ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
                     : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
 
-                // SURGICAL EDIT START: Tambah paparan peranan di bawah nama
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">${i + 1}</td>
@@ -332,8 +363,8 @@
                             <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${row.peranan || 'GURU'}</div>
                         </td>
                         <td class="px-4 py-4 text-sm text-slate-600">
-                            <div class="font-medium">${row.kod_sekolah}</div>
-                            <div class="text-xs truncate max-w-xs">${row.nama_sekolah}</div>
+                            <div class="font-medium">${row.kod_sekolah || '-'}</div>
+                            <div class="text-xs truncate max-w-xs">${row.nama_sekolah || ''}</div>
                         </td>
                         <td class="px-4 py-4 text-center">
                             <div class="flex flex-col gap-1 items-center">
@@ -347,7 +378,6 @@
                         </td>
                     </tr>
                 `;
-                // SURGICAL EDIT END
             });
             tbody.innerHTML = html;
         }
@@ -384,15 +414,17 @@
 
         window.openEdit = function(id) {
             editingId = id;
-            const record = currentData.find(r => r.id === id);
+            const record = currentData.find(r => r.id === id && !r.isDummy);
             if(!record) return;
 
             document.getElementById('edit_nama').value = record.nama_penuh;
             document.getElementById('edit_ic').value = record.ic_no;
-            document.getElementById('edit_subjek').value = record.subjek;
-            document.getElementById('edit_peranan').value = record.peranan || 'GURU'; // SURGICAL EDIT: Tambah nilai peranan
+            document.getElementById('edit_subjek').value = record.subjek || '';
+            /* SURGICAL EDIT START: Ambil nilai peranan pada edit */
+            document.getElementById('edit_peranan').value = record.peranan || 'GURU';
+            /* SURGICAL EDIT END */
             
-            if(tomSelectInstance) {
+            if(tomSelectInstance && record.kod_sekolah) {
                 tomSelectInstance.setValue(record.kod_sekolah);
             }
             
@@ -415,16 +447,18 @@
 
             const subjek = document.getElementById('edit_subjek').value;
             const kodSekolah = document.getElementById('edit_sekolah').value;
-            const peranan = document.getElementById('edit_peranan').value; // SURGICAL EDIT: Ambil nilai peranan
+            /* SURGICAL EDIT START: Simpan nilai peranan pada edit */
+            const peranan = document.getElementById('edit_peranan').value;
+            /* SURGICAL EDIT END */
             
             const kemaskiniData = {
                 nama_penuh: document.getElementById('edit_nama').value.toUpperCase(),
                 subjek: subjek,
+                peranan: peranan,
                 kod_sekolah: kodSekolah,
                 nama_sekolah: schoolMap[kodSekolah],
-                peranan: peranan, // SURGICAL EDIT: Simpan peranan
-                sesi_1_tarikh: subjectDatesMap[subjek].s1,
-                sesi_2_tarikh: subjectDatesMap[subjek].s2
+                sesi_1_tarikh: subjectDatesMap[subjek] ? subjectDatesMap[subjek].s1 : null,
+                sesi_2_tarikh: subjectDatesMap[subjek] ? subjectDatesMap[subjek].s2 : null
             };
 
             try {
@@ -483,7 +517,7 @@
             let startYTable = 38;
 
             if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, 10, 32, 24); // x, y, width, height (dibesarkan sedikit, lebih panjang)
+                doc.addImage(logoData, 'PNG', 14, 10, 32, 24); // x, y, width, height
                 
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
@@ -502,23 +536,35 @@
                 doc.text(`Subjek: ${subjek}`, 14, 25);
             }
 
-            // SURGICAL EDIT START: Tambah peranan dalam tatasusunan data PDF
-            const tableData = currentData.map((row, i) => [
-                i + 1,
-                `${row.nama_penuh}\n(${row.peranan || 'GURU'})`,
-                row.ic_no,
-                `${row.kod_sekolah}\n${row.nama_sekolah}`,
-                "", // TT Sesi 1
-                ""  // TT Sesi 2
-            ]);
-            // SURGICAL EDIT END
+            /* SURGICAL EDIT START: Sediakan data jadual PDF untuk Dummy Rows */
+            const tableData = currentData.map((row, i) => {
+                if(row.isDummy) {
+                    return [
+                        i + 1,
+                        "",
+                        "",
+                        "",
+                        "", 
+                        ""
+                    ];
+                }
+                return [
+                    i + 1,
+                    `${row.nama_penuh}\n(${row.peranan || 'GURU'})`,
+                    row.ic_no,
+                    `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
+                    "", // TT Sesi 1
+                    ""  // TT Sesi 2
+                ];
+            });
+            /* SURGICAL EDIT END */
 
             // Cetak Jadual
             doc.autoTable({
                 startY: startYTable,
                 head: [[
                     'Bil', 
-                    'Nama Penuh & Peranan', // SURGICAL EDIT: Ubah tajuk kolum
+                    'Nama Penuh & Peranan', 
                     'No. Kad Pengenalan', 
                     'Sekolah', 
                     `Sesi 1\n(${dates.d1})`, 
@@ -538,7 +584,7 @@
                 },
                 didDrawCell: function(data) {
                     if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
-                        // Ruang tandatangan dikawal oleh padding/height, AutoTable sedia ruangan cukup.
+                        // Ruang tandatangan
                     }
                 }
             });
@@ -553,4 +599,3 @@
     </script>
 </body>
 </html>
-<!-- SURGICAL EDIT END -->
