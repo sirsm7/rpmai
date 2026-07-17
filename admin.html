@@ -82,7 +82,7 @@
 
     <div id="login-view" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="mb-6 text-center">
-            <img src="ikonppd.png" alt="Logo PPDAG" class="h-24 mx-auto mb-2 drop-shadow-md rounded-full bg-white p-1" onerror="this.style.display='none'">
+            <img src="ikonppd.png" alt="Logo PPDAG" class="h-32 mx-auto mb-2 drop-shadow-md rounded-full bg-white p-1" onerror="this.style.display='none'">
         </div>
         <div class="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden border border-gray-100">
             <div class="bg-slate-800 px-6 py-5 text-center">
@@ -465,23 +465,23 @@
 
             // Masukkan Logo
             const logoData = await getLogoBase64();
-            let startYTable = 32;
+            let startYTable = 38;
 
             if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, 10, 20, 20); // x, y, width, height
+                doc.addImage(logoData, 'PNG', 14, 10, 32, 24); // x, y, width, height (dibesarkan sedikit, lebih panjang)
                 
-                doc.setFontSize(14);
+                doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
-                doc.text("BORANG KEHADIRAN BENGKEL PPDAG", 38, 18);
+                doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 48, 18);
                 
                 doc.setFontSize(11);
                 doc.setFont("helvetica", "normal");
-                doc.text(`Subjek: ${subjek}`, 38, 25);
+                doc.text(`Subjek: ${subjek}`, 48, 25);
             } else {
                 // Fallback jika logo tiada
-                doc.setFontSize(14);
+                doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
-                doc.text("BORANG KEHADIRAN BENGKEL PPDAG", 14, 18);
+                doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 14, 18);
                 doc.setFontSize(11);
                 doc.setFont("helvetica", "normal");
                 doc.text(`Subjek: ${subjek}`, 14, 25);

@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- TomSelect untuk carian canggih -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
@@ -18,7 +17,6 @@
         .toast-enter { transform: translateY(0); opacity: 1; }
         .toast-exit { transform: translateY(-100%); opacity: 0; }
         
-        /* TomSelect override untuk padan dengan Tailwind */
         .ts-control {
             border-radius: 0.5rem;
             padding: 0.5rem 1rem;
@@ -37,7 +35,7 @@
     </div>
 
     <div class="mb-6 text-center">
-        <img src="ikonppd.png" alt="Logo PPDAG" class="h-24 mx-auto drop-shadow-md rounded-full bg-white p-1" onerror="this.style.display='none'">
+        <img src="ikonppd.png" alt="Logo PPDAG" class="h-32 mx-auto drop-shadow-md rounded-full bg-white p-1" onerror="this.style.display='none'">
     </div>
 
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-100">
@@ -125,7 +123,6 @@
                     <h4 class="text-md font-bold text-gray-800 mb-3 text-center">Pengesahan Kehadiran</h4>
                     <div class="space-y-3">
                         
-                        <!-- Sesi 1 Card -->
                         <div class="border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm">
                             <div>
                                 <p class="font-bold text-gray-800">Sesi 1</p>
@@ -136,7 +133,6 @@
                             </button>
                         </div>
 
-                        <!-- Sesi 2 Card -->
                         <div class="border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm">
                             <div>
                                 <p class="font-bold text-gray-800">Sesi 2</p>
@@ -225,7 +221,16 @@
             if(!dateString) return "";
             const [y, m, d] = dateString.split('-');
             const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-            return `${d} ${months[parseInt(m)-1]} ${y}`;
+            return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+        }
+
+        function isDateArrived(dateString) {
+            if (!dateString) return false;
+            const [y, m, d] = dateString.split('-');
+            const targetDate = new Date(y, m - 1, d);
+            const now = new Date();
+            const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return todayDate >= targetDate;
         }
 
         async function loadSchools() {
@@ -246,13 +251,11 @@
                         schoolMap[s.kod_sekolah] = s.nama_sekolah;
                         const option = document.createElement('option');
                         option.value = s.kod_sekolah;
-                        // Papar Nama Sekolah didahului kod untuk mudahkan carian
                         option.textContent = `${s.nama_sekolah} (${s.kod_sekolah})`;
                         select.appendChild(option);
                     });
                 }
 
-                // Inisialisasi TomSelect
                 if(tomSelectInstance) tomSelectInstance.destroy();
                 
                 tomSelectInstance = new TomSelect("#reg_sekolah", {
@@ -340,7 +343,6 @@
 
                 currentRecord = data;
                 
-                // Reset form and tomselect
                 document.getElementById('register-form').reset();
                 if(tomSelectInstance) tomSelectInstance.clear();
                 
@@ -352,6 +354,14 @@
                 showToast("Gagal mendaftar. No KP mungkin wujud.", "error");
                 showView('register');
             }
+        }
+
+        function handleAttendanceClick(sesi, tarikh) {
+            if (!isDateArrived(tarikh)) {
+                showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
+                return;
+            }
+            markAttendance(sesi);
         }
 
         async function markAttendance(sesi) {
@@ -406,7 +416,7 @@
                 btn1.textContent = "Sahkan Kehadiran";
                 btn1.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
                 btn1.disabled = false;
-                btn1.onclick = () => markAttendance(1);
+                btn1.onclick = () => handleAttendanceClick(1, currentRecord.sesi_1_tarikh);
             }
 
             if(currentRecord.sesi_2_hadir) {
@@ -417,7 +427,7 @@
                 btn2.textContent = "Sahkan Kehadiran";
                 btn2.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
                 btn2.disabled = false;
-                btn2.onclick = () => markAttendance(2);
+                btn2.onclick = () => handleAttendanceClick(2, currentRecord.sesi_2_tarikh);
             }
         }
 
