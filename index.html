@@ -181,6 +181,19 @@
             "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
         };
         
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Tarikh mutlak 8 sesi */
+        const absoluteDates = [
+            "2026-07-20", // Sesi 1 (Mate SR)
+            "2026-07-21", // Sesi 2 (Mate SR)
+            "2026-07-22", // Sesi 3 (Sains SR)
+            "2026-07-23", // Sesi 4 (Sains SR)
+            "2026-08-10", // Sesi 5 (Mate/SK SM)
+            "2026-08-11", // Sesi 6 (Mate/SK SM)
+            "2026-08-12", // Sesi 7 (Sains/ST SM)
+            "2026-08-13"  // Sesi 8 (Sains/ST SM)
+        ];
+        /* [COMMENT SYNTAX] SURGICAL EDIT END */
+        
         let tomSelectInstance = null;
         let currentRecord = null;
         let schoolsLoaded = false;
@@ -395,11 +408,12 @@
         }
 
         function handleAttendanceClick(sesi, tarikh, peranan) {
-            const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
-            if (!isExempt && !isDateArrived(tarikh)) {
+            /* [COMMENT SYNTAX] SURGICAL EDIT START: Semak isDateArrived untuk semua peranan */
+            if (!isDateArrived(tarikh)) {
                 showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
                 return;
             }
+            /* [COMMENT SYNTAX] SURGICAL EDIT END */
             markAttendance(sesi);
         }
 
@@ -461,8 +475,10 @@
                 const isAttended = currentRecord[`sesi_${i}_hadir`];
                 if (!isAttended) allAttended = false;
                 
-                const tarikhDisplay = isExempt ? "Tiada Tarikh Khusus" : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
-                const rawTarikh = isExempt ? null : currentRecord[`sesi_${i}_tarikh`];
+                /* [COMMENT SYNTAX] SURGICAL EDIT START: Papar tarikh sebenar untuk PEGAWAI & JURULATIH */
+                const tarikhDisplay = isExempt ? formatDateDisplay(absoluteDates[i-1]) : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
+                const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
+                /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
                 const div = document.createElement('div');
                 div.className = "border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm";
