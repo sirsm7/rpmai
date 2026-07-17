@@ -55,18 +55,18 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
                     <input type="text" id="edit_ic" required pattern="[0-9]+" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50" readonly title="No KP tidak boleh diubah untuk elak ralat integrasi.">
                 </div>
-                <!-- SURGICAL EDIT START: Peranan dropdown dalam modal -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Peranan</label>
                     <select id="edit_peranan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         <option value="GURU">GURU</option>
                         <option value="PEGAWAI">PEGAWAI</option>
+                        <option value="JURULATIH">JURULATIH</option>
                     </select>
                 </div>
-                <!-- SURGICAL EDIT END -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
-                    <select id="edit_subjek" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select id="edit_subjek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Tiada / Pilih Subjek --</option>
                         <option value="MATEMATIK (SR)">MATEMATIK (SR)</option>
                         <option value="SAINS (SR)">SAINS (SR)</option>
                         <option value="MATEMATIK (SM)">MATEMATIK (SM)</option>
@@ -149,6 +149,21 @@
                     </div>
                 </div>
 
+                <div id="summary-cards" class="grid grid-cols-3 gap-4 mb-6 hidden-view">
+                    <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-lg text-center">
+                        <p class="text-xs font-semibold text-indigo-600 uppercase">Pegawai</p>
+                        <h4 id="sum_pegawai" class="text-2xl font-bold text-indigo-900 mt-1">0 / 10</h4>
+                    </div>
+                    <div class="bg-teal-50 border border-teal-100 p-4 rounded-lg text-center">
+                        <p class="text-xs font-semibold text-teal-600 uppercase">Jurulatih</p>
+                        <h4 id="sum_jurulatih" class="text-2xl font-bold text-teal-900 mt-1">0 / 8</h4>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg text-center">
+                        <p class="text-xs font-semibold text-blue-600 uppercase">Guru (Subjek)</p>
+                        <h4 id="sum_guru" class="text-2xl font-bold text-blue-900 mt-1">0</h4>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto border rounded-lg bg-white">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-slate-50">
@@ -195,7 +210,6 @@
             "SAINS TULEN (SM)": { d1: "12 Ogos 2026", d2: "13 Ogos 2026", s1: "2026-08-12", s2: "2026-08-13" }
         };
 
-        // UI Helpers
         function showMsg(title, body) {
             document.getElementById('msg-title').textContent = title;
             document.getElementById('msg-body').textContent = body;
@@ -205,7 +219,6 @@
             document.getElementById('msg-modal').classList.add('hidden-view');
         }
 
-        // Login Logic
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const pwd = document.getElementById('admin_pwd').value;
@@ -214,7 +227,7 @@
                 document.getElementById('dashboard-view').classList.remove('hidden-view');
                 document.getElementById('admin_pwd').value = '';
                 document.getElementById('login-error').classList.add('hidden-view');
-                loadSchools(); // Pre-load schools for edit modal
+                loadSchools();
             } else {
                 document.getElementById('login-error').classList.remove('hidden-view');
             }
@@ -226,19 +239,17 @@
             document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
             document.getElementById('filter_subjek').value = '';
             document.getElementById('btn-pdf').disabled = true;
+            document.getElementById('summary-cards').classList.add('hidden-view');
             currentData = [];
         });
 
-        // Load Schools
         async function loadSchools() {
             if (schoolsLoaded) return;
             try {
-                /* SURGICAL EDIT START: Tukar jadual sekolah ke smpid_sekolah_data */
                 const { data, error } = await supabaseClient
                     .from('smpid_sekolah_data')
                     .select('kod_sekolah, nama_sekolah')
                     .order('nama_sekolah', { ascending: true });
-                /* SURGICAL EDIT END */
 
                 if (error) throw error;
 
@@ -268,11 +279,11 @@
             }
         }
 
-        // Fetch Data
         async function fetchTableData() {
             const subjek = document.getElementById('filter_subjek').value;
             const tbody = document.getElementById('table-body');
             const btnPdf = document.getElementById('btn-pdf');
+            const summary = document.getElementById('summary-cards');
 
             if(!subjek) {
                 showMsg("Ralat", "Sila pilih kumpulan subjek.");
@@ -281,14 +292,15 @@
 
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
             btnPdf.disabled = true;
+            summary.classList.add('hidden-view');
             currentData = [];
 
             try {
-                /* SURGICAL EDIT START: Tarik GURU dan PEGAWAI berasingan, pad 10 ruang */
                 const { data: guruData, error: guruErr } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
                     .eq('subjek', subjek)
+                    .eq('peranan', 'GURU')
                     .order('nama_sekolah', { ascending: true })
                     .order('nama_penuh', { ascending: true });
 
@@ -302,17 +314,27 @@
 
                 if (pegErr) throw pegErr;
 
-                // Tapisan pastikan PEGAWAI tiada dalam senarai Guru (jika ralat data)
-                const filteredGuru = (guruData || []).filter(r => r.peranan !== 'PEGAWAI');
-                let paddedPegawai = [...(pegData || [])];
-                
-                // Pastikan ruang PEGAWAI minimum 10
-                while(paddedPegawai.length < 10) {
-                    paddedPegawai.push({ isDummy: true });
-                }
+                const { data: jurData, error: jurErr } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*')
+                    .eq('peranan', 'JURULATIH')
+                    .order('nama_penuh', { ascending: true });
 
-                currentData = [...paddedPegawai, ...filteredGuru];
-                /* SURGICAL EDIT END */
+                if (jurErr) throw jurErr;
+
+                document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
+                document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 8`;
+                document.getElementById('sum_guru').textContent = `${(guruData || []).length}`;
+
+                let paddedPegawai = [...(pegData || [])];
+                while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI' });
+
+                let paddedJurulatih = [...(jurData || [])];
+                while(paddedJurulatih.length < 8) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH' });
+
+                currentData = [...paddedPegawai, ...paddedJurulatih, ...(guruData || [])];
+
+                summary.classList.remove('hidden-view');
 
                 if(currentData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
@@ -335,41 +357,43 @@
             let html = '';
             
             currentData.forEach((row, i) => {
-                /* SURGICAL EDIT START: Papar baris dummy untuk PEGAWAI kosong */
                 if(row.isDummy) {
                     html += `
                         <tr class="bg-slate-50/50">
                             <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-400 text-center">${i + 1}</td>
-                            <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Ruang Pegawai (Kosong)</td>
+                            <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Ruang ${row.roleLabel} (Kosong)</td>
                         </tr>
                     `;
                     return;
                 }
-                /* SURGICAL EDIT END */
 
-                const s1Badge = row.sesi_1_hadir 
-                    ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
-                    : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
-                
-                const s2Badge = row.sesi_2_hadir 
-                    ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
-                    : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+                const role = row.peranan || 'GURU';
+                const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
+                const totalSessions = isExempt ? 8 : 2;
+                let badgesHtml = '';
+
+                for(let s = 1; s <= totalSessions; s++) {
+                    const hadir = row[`sesi_${s}_hadir`];
+                    const badge = hadir 
+                        ? '<span class="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
+                        : '<span class="px-2 py-0.5 inline-flex text-[10px] leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+                    badgesHtml += `<div class="text-xs text-slate-500 flex items-center justify-between w-[4.5rem]">S${s}: ${badge}</div>`;
+                }
 
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">${i + 1}</td>
                         <td class="px-4 py-4">
                             <div class="text-sm font-bold text-slate-900 uppercase">${row.nama_penuh}</div>
-                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${row.peranan || 'GURU'}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${role}</div>
                         </td>
                         <td class="px-4 py-4 text-sm text-slate-600">
                             <div class="font-medium">${row.kod_sekolah || '-'}</div>
                             <div class="text-xs truncate max-w-xs">${row.nama_sekolah || ''}</div>
                         </td>
                         <td class="px-4 py-4 text-center">
-                            <div class="flex flex-col gap-1 items-center">
-                                <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 1: ${s1Badge}</div>
-                                <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 2: ${s2Badge}</div>
+                            <div class="flex flex-wrap gap-x-3 gap-y-1 justify-center max-w-[220px] mx-auto">
+                                ${badgesHtml}
                             </div>
                         </td>
                         <td class="px-4 py-4 text-right text-sm font-medium whitespace-nowrap">
@@ -403,7 +427,7 @@
                 if(error) throw error;
                 
                 closeDelete();
-                fetchTableData(); // Refresh
+                fetchTableData();
                 showMsg("Berjaya", "Rekod telah dipadam.");
             } catch (err) {
                 console.error(err);
@@ -420,9 +444,7 @@
             document.getElementById('edit_nama').value = record.nama_penuh;
             document.getElementById('edit_ic').value = record.ic_no;
             document.getElementById('edit_subjek').value = record.subjek || '';
-            /* SURGICAL EDIT START: Ambil nilai peranan pada edit */
             document.getElementById('edit_peranan').value = record.peranan || 'GURU';
-            /* SURGICAL EDIT END */
             
             if(tomSelectInstance && record.kod_sekolah) {
                 tomSelectInstance.setValue(record.kod_sekolah);
@@ -447,9 +469,7 @@
 
             const subjek = document.getElementById('edit_subjek').value;
             const kodSekolah = document.getElementById('edit_sekolah').value;
-            /* SURGICAL EDIT START: Simpan nilai peranan pada edit */
             const peranan = document.getElementById('edit_peranan').value;
-            /* SURGICAL EDIT END */
             
             const kemaskiniData = {
                 nama_penuh: document.getElementById('edit_nama').value.toUpperCase(),
@@ -461,6 +481,10 @@
                 sesi_2_tarikh: subjectDatesMap[subjek] ? subjectDatesMap[subjek].s2 : null
             };
 
+            if(peranan === 'PEGAWAI' || peranan === 'JURULATIH') {
+                kemaskiniData.subjek = null;
+            }
+
             try {
                 const { error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
@@ -470,7 +494,7 @@
                 if(error) throw error;
 
                 closeEdit();
-                fetchTableData(); // Refresh table
+                fetchTableData();
                 showMsg("Berjaya", "Rekod dikemaskini.");
             } catch (err) {
                 console.error(err);
@@ -512,12 +536,11 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape'); 
 
-            // Masukkan Logo
             const logoData = await getLogoBase64();
             let startYTable = 38;
 
             if (logoData) {
-                doc.addImage(logoData, 'PNG', 14, 10, 32, 24); // x, y, width, height
+                doc.addImage(logoData, 'PNG', 14, 10, 32, 24); 
                 
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
@@ -527,7 +550,6 @@
                 doc.setFont("helvetica", "normal");
                 doc.text(`Subjek: ${subjek}`, 48, 25);
             } else {
-                // Fallback jika logo tiada
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
                 doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 14, 18);
@@ -536,7 +558,6 @@
                 doc.text(`Subjek: ${subjek}`, 14, 25);
             }
 
-            /* SURGICAL EDIT START: Sediakan data jadual PDF untuk Dummy Rows */
             const tableData = currentData.map((row, i) => {
                 if(row.isDummy) {
                     return [
@@ -553,13 +574,11 @@
                     `${row.nama_penuh}\n(${row.peranan || 'GURU'})`,
                     row.ic_no,
                     `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
-                    "", // TT Sesi 1
-                    ""  // TT Sesi 2
+                    "", 
+                    ""  
                 ];
             });
-            /* SURGICAL EDIT END */
 
-            // Cetak Jadual
             doc.autoTable({
                 startY: startYTable,
                 head: [[
@@ -572,15 +591,15 @@
                 ]],
                 body: tableData,
                 theme: 'grid',
-                headStyles: { fillColor: [30, 41, 59], textColor: 255, halign: 'center' }, // slate-800
+                headStyles: { fillColor: [30, 41, 59], textColor: 255, halign: 'center' }, 
                 styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
                 columnStyles: {
                     0: { cellWidth: 12, halign: 'center' },
                     1: { cellWidth: 70 },
                     2: { cellWidth: 35, halign: 'center' },
                     3: { cellWidth: 70 },
-                    4: { cellWidth: 40 }, // TT 1
-                    5: { cellWidth: 40 }  // TT 2
+                    4: { cellWidth: 40 }, 
+                    5: { cellWidth: 40 }  
                 },
                 didDrawCell: function(data) {
                     if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
@@ -589,7 +608,6 @@
                 }
             });
 
-            // Muat Turun
             const safeFileName = subjek.replace(/[^a-zA-Z0-9]/g, '_');
             doc.save(`Kehadiran_${safeFileName}.pdf`);
             
