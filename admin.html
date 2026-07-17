@@ -8,15 +8,82 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
         .hidden-view { display: none !important; }
+        .modal-bg { background-color: rgba(0, 0, 0, 0.5); }
     </style>
 </head>
 <body class="min-h-screen text-gray-800">
 
-    <div id="login-view" class="min-h-screen flex items-center justify-center p-4">
+    <div id="msg-modal" class="fixed inset-0 modal-bg flex items-center justify-center z-50 hidden-view px-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 transform transition-all">
+            <h3 id="msg-title" class="text-lg font-bold text-gray-900 mb-2">Makluman</h3>
+            <p id="msg-body" class="text-gray-600 mb-6"></p>
+            <button onclick="closeMsg()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors">Tutup</button>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="fixed inset-0 modal-bg flex items-center justify-center z-50 hidden-view px-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 transform transition-all text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Sahkan Padam</h3>
+            <p class="text-gray-600 mb-6 text-sm">Adakah anda pasti mahu memadam rekod ini? Tindakan ini tidak boleh diundur.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDelete()" class="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 rounded-lg transition-colors">Batal</button>
+                <button onclick="confirmDelete()" class="w-1/2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg transition-colors">Padam</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="fixed inset-0 modal-bg flex items-center justify-center z-50 hidden-view px-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 transform transition-all">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Kemaskini Rekod</h3>
+            <form id="edit-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh</label>
+                    <input type="text" id="edit_nama" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
+                    <input type="text" id="edit_ic" required pattern="[0-9]+" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50" readonly title="No KP tidak boleh diubah untuk elak ralat integrasi.">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
+                    <select id="edit_subjek" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="MATEMATIK (SR)">MATEMATIK (SR)</option>
+                        <option value="SAINS (SR)">SAINS (SR)</option>
+                        <option value="MATEMATIK (SM)">MATEMATIK (SM)</option>
+                        <option value="SAINS KOMPUTER (SM)">SAINS KOMPUTER (SM)</option>
+                        <option value="SAINS (SM)">SAINS (SM)</option>
+                        <option value="SAINS TULEN (SM)">SAINS TULEN (SM)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
+                    <select id="edit_sekolah" required class="w-full border-gray-300 rounded-lg">
+                        <option value="">-- Memuatkan Sekolah... --</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeEdit()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 rounded-lg transition-colors">Batal</button>
+                    <button type="submit" id="btn-save-edit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="login-view" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="mb-6 text-center">
+            <img src="ikonppd.png" alt="Logo PPDAG" class="h-24 mx-auto mb-2 drop-shadow-md rounded-full bg-white p-1" onerror="this.style.display='none'">
+        </div>
         <div class="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden border border-gray-100">
             <div class="bg-slate-800 px-6 py-5 text-center">
                 <h1 class="text-2xl font-bold text-white">Log Masuk Admin</h1>
@@ -33,57 +100,60 @@
                 </form>
             </div>
         </div>
+        <a href="index.html" class="mt-6 text-slate-500 hover:text-slate-700 text-sm font-medium underline transition-colors">← Kembali ke Utama</a>
     </div>
 
-    <div id="dashboard-view" class="hidden-view">
-        <nav class="bg-slate-800 text-white shadow-md">
+    <div id="dashboard-view" class="hidden-view bg-gray-50 min-h-screen">
+        <nav class="bg-slate-800 text-white shadow-md sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
-                        <span class="font-bold text-xl">Admin PPDAG</span>
+                    <div class="flex items-center gap-3">
+                        <img src="ikonppd.png" alt="Logo PPDAG" class="h-10 w-10 bg-white rounded-full p-0.5" onerror="this.style.display='none'">
+                        <span class="font-bold text-lg md:text-xl hidden sm:block">Admin eDaftar PPDAG</span>
                     </div>
-                    <button id="btn-logout" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm font-medium transition-colors">Log Keluar</button>
+                    <div class="flex items-center gap-4">
+                        <a href="index.html" class="text-slate-300 hover:text-white text-sm font-medium transition-colors hidden sm:block">Utama</a>
+                        <button id="btn-logout" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm font-medium transition-colors border border-slate-600">Log Keluar</button>
+                    </div>
                 </div>
             </div>
         </nav>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="bg-white shadow rounded-lg p-6 border border-gray-200">
+            <div class="bg-white shadow-sm rounded-xl p-6 border border-gray-200">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-                    <div class="w-full md:w-1/3">
-                        <label for="filter_tarikh" class="block text-sm font-medium text-gray-700 mb-1">Pilih Tarikh Bengkel</label>
-                        <select id="filter_tarikh" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500">
-                            <option value="">-- Sila Pilih Tarikh --</option>
-                            <option value="2026-07-20">20 Julai 2026 (Matematik SR Sesi 1)</option>
-                            <option value="2026-07-21">21 Julai 2026 (Matematik SR Sesi 2)</option>
-                            <option value="2026-07-22">22 Julai 2026 (Sains SR Sesi 1)</option>
-                            <option value="2026-07-23">23 Julai 2026 (Sains SR Sesi 2)</option>
-                            <option value="2026-08-10">10 Ogos 2026 (Matematik SM / SK SM Sesi 1)</option>
-                            <option value="2026-08-11">11 Ogos 2026 (Matematik SM / SK SM Sesi 2)</option>
-                            <option value="2026-08-12">12 Ogos 2026 (Sains SM / Sains Tulen Sesi 1)</option>
-                            <option value="2026-08-13">13 Ogos 2026 (Sains SM / Sains Tulen Sesi 2)</option>
+                    <div class="w-full md:w-1/2">
+                        <label for="filter_subjek" class="block text-sm font-medium text-gray-700 mb-1">Saring Mengikut Subjek / Kumpulan</label>
+                        <select id="filter_subjek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 bg-gray-50">
+                            <option value="">-- Sila Pilih Kumpulan --</option>
+                            <option value="MATEMATIK (SR)">MATEMATIK (SR) - 20 & 21 Julai 2026</option>
+                            <option value="SAINS (SR)">SAINS (SR) - 22 & 23 Julai 2026</option>
+                            <option value="MATEMATIK (SM)">MATEMATIK (SM) - 10 & 11 Ogos 2026</option>
+                            <option value="SAINS KOMPUTER (SM)">SAINS KOMPUTER (SM) - 10 & 11 Ogos 2026</option>
+                            <option value="SAINS (SM)">SAINS (SM) - 12 & 13 Ogos 2026</option>
+                            <option value="SAINS TULEN (SM)">SAINS TULEN (SM) - 12 & 13 Ogos 2026</option>
                         </select>
                     </div>
                     <div class="flex gap-3 w-full md:w-auto">
-                        <button id="btn-cari" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-colors">Papar Data</button>
-                        <button id="btn-pdf" class="flex-1 md:flex-none bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>Muat Turun PDF</button>
+                        <button id="btn-cari" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors">Papar</button>
+                        <button id="btn-pdf" class="flex-1 md:flex-none bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>PDF Kehadiran</button>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto border rounded-lg">
+                <div class="overflow-x-auto border rounded-lg bg-white">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-slate-50">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bil</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Penuh</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No KP</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subjek</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sekolah</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Bil</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Maklumat Peserta</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Sekolah</th>
+                                <th scope="col" class="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Status Kehadiran</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Tindakan</th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="bg-white divide-y divide-gray-200">
                             <tr>
-                                <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Sila pilih tarikh dan klik "Papar Data".</td>
+                                <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Sila pilih kumpulan subjek dan klik "Papar".</td>
                             </tr>
                         </tbody>
                     </table>
@@ -97,11 +167,36 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentData = [];
-
-        // Simple hardcoded login for demo/admin protection
         const ADMIN_PWD = "ppdag@12345";
+        
+        let currentData = [];
+        let schoolsLoaded = false;
+        let schoolMap = {};
+        let tomSelectInstance = null;
+        
+        let editingId = null;
+        let deletingId = null;
 
+        const subjectDatesMap = {
+            "MATEMATIK (SR)": { d1: "20 Julai 2026", d2: "21 Julai 2026", s1: "2026-07-20", s2: "2026-07-21" },
+            "SAINS (SR)": { d1: "22 Julai 2026", d2: "23 Julai 2026", s1: "2026-07-22", s2: "2026-07-23" },
+            "MATEMATIK (SM)": { d1: "10 Ogos 2026", d2: "11 Ogos 2026", s1: "2026-08-10", s2: "2026-08-11" },
+            "SAINS KOMPUTER (SM)": { d1: "10 Ogos 2026", d2: "11 Ogos 2026", s1: "2026-08-10", s2: "2026-08-11" },
+            "SAINS (SM)": { d1: "12 Ogos 2026", d2: "13 Ogos 2026", s1: "2026-08-12", s2: "2026-08-13" },
+            "SAINS TULEN (SM)": { d1: "12 Ogos 2026", d2: "13 Ogos 2026", s1: "2026-08-12", s2: "2026-08-13" }
+        };
+
+        // UI Helpers
+        function showMsg(title, body) {
+            document.getElementById('msg-title').textContent = title;
+            document.getElementById('msg-body').textContent = body;
+            document.getElementById('msg-modal').classList.remove('hidden-view');
+        }
+        function closeMsg() {
+            document.getElementById('msg-modal').classList.add('hidden-view');
+        }
+
+        // Login Logic
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const pwd = document.getElementById('admin_pwd').value;
@@ -110,6 +205,7 @@
                 document.getElementById('dashboard-view').classList.remove('hidden-view');
                 document.getElementById('admin_pwd').value = '';
                 document.getElementById('login-error').classList.add('hidden-view');
+                loadSchools(); // Pre-load schools for edit modal
             } else {
                 document.getElementById('login-error').classList.remove('hidden-view');
             }
@@ -118,32 +214,69 @@
         document.getElementById('btn-logout').addEventListener('click', () => {
             document.getElementById('dashboard-view').classList.add('hidden-view');
             document.getElementById('login-view').classList.remove('hidden-view');
-            document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Sila pilih tarikh dan klik "Papar Data".</td></tr>';
-            document.getElementById('filter_tarikh').value = '';
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
+            document.getElementById('filter_subjek').value = '';
             document.getElementById('btn-pdf').disabled = true;
             currentData = [];
         });
 
-        document.getElementById('btn-cari').addEventListener('click', async () => {
-            const tarikh = document.getElementById('filter_tarikh').value;
+        // Load Schools
+        async function loadSchools() {
+            if (schoolsLoaded) return;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('delima_data_sekolah')
+                    .select('kod_sekolah, nama_sekolah')
+                    .order('nama_sekolah', { ascending: true });
+
+                if (error) throw error;
+
+                const select = document.getElementById('edit_sekolah');
+                select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
+                
+                if(data && data.length > 0){
+                    data.forEach(s => {
+                        schoolMap[s.kod_sekolah] = s.nama_sekolah;
+                        const option = document.createElement('option');
+                        option.value = s.kod_sekolah;
+                        option.textContent = `${s.nama_sekolah} (${s.kod_sekolah})`;
+                        select.appendChild(option);
+                    });
+                }
+
+                if(tomSelectInstance) tomSelectInstance.destroy();
+                tomSelectInstance = new TomSelect("#edit_sekolah", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    placeholder: "Cari nama sekolah atau kod...",
+                });
+
+                schoolsLoaded = true;
+            } catch (err) {
+                console.error("Ralat muat sekolah:", err);
+            }
+        }
+
+        // Fetch Data
+        async function fetchTableData() {
+            const subjek = document.getElementById('filter_subjek').value;
             const tbody = document.getElementById('table-body');
             const btnPdf = document.getElementById('btn-pdf');
 
-            if(!tarikh) {
-                alert("Sila pilih tarikh.");
+            if(!subjek) {
+                showMsg("Ralat", "Sila pilih kumpulan subjek.");
                 return;
             }
 
-            tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Memuatkan data...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
             btnPdf.disabled = true;
             currentData = [];
 
             try {
-                // Cari peserta yang ada bengkel pada tarikh yang dipilih (sama ada sesi 1 atau sesi 2)
                 const { data, error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
-                    .or(`sesi_1_tarikh.eq.${tarikh},sesi_2_tarikh.eq.${tarikh}`)
+                    .eq('subjek', subjek)
                     .order('nama_sekolah', { ascending: true })
                     .order('nama_penuh', { ascending: true });
 
@@ -152,50 +285,207 @@
                 currentData = data;
 
                 if(currentData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk tarikh ini.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
                     return;
                 }
 
-                // Render jadual
-                let html = '';
-                currentData.forEach((row, i) => {
-                    html += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${i + 1}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${row.nama_penuh}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row.ic_no}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row.subjek}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">${row.kod_sekolah} - ${row.nama_sekolah}</td>
-                        </tr>
-                    `;
-                });
-                tbody.innerHTML = html;
+                renderTable();
                 btnPdf.disabled = false;
 
             } catch (err) {
-                console.error("Ralat ambil data:", err);
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-sm text-red-500">Berlaku ralat sistem. Sila cuba lagi.</td></tr>';
+                console.error("Ralat:", err);
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-red-500">Berlaku ralat sistem. Sila cuba lagi.</td></tr>';
+            }
+        }
+
+        document.getElementById('btn-cari').addEventListener('click', fetchTableData);
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            let html = '';
+            
+            currentData.forEach((row, i) => {
+                const s1Badge = row.sesi_1_hadir 
+                    ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
+                    : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+                
+                const s2Badge = row.sesi_2_hadir 
+                    ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
+                    : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">${i + 1}</td>
+                        <td class="px-4 py-4">
+                            <div class="text-sm font-bold text-slate-900 uppercase">${row.nama_penuh}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no}</div>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-slate-600">
+                            <div class="font-medium">${row.kod_sekolah}</div>
+                            <div class="text-xs truncate max-w-xs">${row.nama_sekolah}</div>
+                        </td>
+                        <td class="px-4 py-4 text-center">
+                            <div class="flex flex-col gap-1 items-center">
+                                <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 1: ${s1Badge}</div>
+                                <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 2: ${s2Badge}</div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-4 text-right text-sm font-medium whitespace-nowrap">
+                            <button onclick="openEdit('${row.id}')" class="text-blue-600 hover:text-blue-900 mr-3 px-2 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
+                            <button onclick="openDelete('${row.id}')" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50 transition-colors">Padam</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        window.openDelete = function(id) {
+            deletingId = id;
+            document.getElementById('delete-modal').classList.remove('hidden-view');
+        };
+
+        window.closeDelete = function() {
+            deletingId = null;
+            document.getElementById('delete-modal').classList.add('hidden-view');
+        };
+
+        window.confirmDelete = async function() {
+            if(!deletingId) return;
+            try {
+                const { error } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .delete()
+                    .eq('id', deletingId);
+                
+                if(error) throw error;
+                
+                closeDelete();
+                fetchTableData(); // Refresh
+                showMsg("Berjaya", "Rekod telah dipadam.");
+            } catch (err) {
+                console.error(err);
+                closeDelete();
+                showMsg("Ralat", "Gagal memadam rekod.");
+            }
+        };
+
+        window.openEdit = function(id) {
+            editingId = id;
+            const record = currentData.find(r => r.id === id);
+            if(!record) return;
+
+            document.getElementById('edit_nama').value = record.nama_penuh;
+            document.getElementById('edit_ic').value = record.ic_no;
+            document.getElementById('edit_subjek').value = record.subjek;
+            
+            if(tomSelectInstance) {
+                tomSelectInstance.setValue(record.kod_sekolah);
+            }
+            
+            document.getElementById('edit-modal').classList.remove('hidden-view');
+        };
+
+        window.closeEdit = function() {
+            editingId = null;
+            document.getElementById('edit-form').reset();
+            document.getElementById('edit-modal').classList.add('hidden-view');
+        };
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!editingId) return;
+
+            const btn = document.getElementById('btn-save-edit');
+            btn.disabled = true;
+            btn.textContent = "Menyimpan...";
+
+            const subjek = document.getElementById('edit_subjek').value;
+            const kodSekolah = document.getElementById('edit_sekolah').value;
+            
+            const kemaskiniData = {
+                nama_penuh: document.getElementById('edit_nama').value.toUpperCase(),
+                subjek: subjek,
+                kod_sekolah: kodSekolah,
+                nama_sekolah: schoolMap[kodSekolah],
+                sesi_1_tarikh: subjectDatesMap[subjek].s1,
+                sesi_2_tarikh: subjectDatesMap[subjek].s2
+            };
+
+            try {
+                const { error } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .update(kemaskiniData)
+                    .eq('id', editingId);
+
+                if(error) throw error;
+
+                closeEdit();
+                fetchTableData(); // Refresh table
+                showMsg("Berjaya", "Rekod dikemaskini.");
+            } catch (err) {
+                console.error(err);
+                showMsg("Ralat", "Gagal menyimpan rekod.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Simpan Perubahan";
             }
         });
 
-        document.getElementById('btn-pdf').addEventListener('click', () => {
+        function getLogoBase64() {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.src = 'ikonppd.png';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(null);
+            });
+        }
+
+        document.getElementById('btn-pdf').addEventListener('click', async () => {
             if(currentData.length === 0) return;
-
-            const tarikhRaw = document.getElementById('filter_tarikh').value;
-            const selectEl = document.getElementById('filter_tarikh');
-            const tajukTarikh = selectEl.options[selectEl.selectedIndex].text;
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('landscape'); // Mendatar untuk ruang lebih luas
-
-            // Tajuk PDF
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.text("BORANG KEHADIRAN BENGKEL PPDAG", 14, 15);
             
-            doc.setFontSize(11);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Tarikh / Sesi : ${tajukTarikh}`, 14, 22);
+            const btnPdf = document.getElementById('btn-pdf');
+            const originalText = btnPdf.textContent;
+            btnPdf.textContent = "Menjana...";
+            btnPdf.disabled = true;
+
+            const subjek = document.getElementById('filter_subjek').value;
+            const dates = subjectDatesMap[subjek];
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape'); 
+
+            // Masukkan Logo
+            const logoData = await getLogoBase64();
+            let startYTable = 32;
+
+            if (logoData) {
+                doc.addImage(logoData, 'PNG', 14, 10, 20, 20); // x, y, width, height
+                
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text("BORANG KEHADIRAN BENGKEL PPDAG", 38, 18);
+                
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Subjek: ${subjek}`, 38, 25);
+            } else {
+                // Fallback jika logo tiada
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text("BORANG KEHADIRAN BENGKEL PPDAG", 14, 18);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Subjek: ${subjek}`, 14, 25);
+            }
 
             // Penyediaan Data Jadual
             const tableData = currentData.map((row, i) => [
@@ -203,34 +493,46 @@
                 row.nama_penuh,
                 row.ic_no,
                 `${row.kod_sekolah}\n${row.nama_sekolah}`,
-                "" // Ruang kosong untuk tandatangan fizikal
+                "", // TT Sesi 1
+                ""  // TT Sesi 2
             ]);
 
             // Cetak Jadual
             doc.autoTable({
-                startY: 28,
-                head: [['Bil', 'Nama Penuh', 'No. Kad Pengenalan', 'Sekolah', 'Tandatangan']],
+                startY: startYTable,
+                head: [[
+                    'Bil', 
+                    'Nama Penuh', 
+                    'No. Kad Pengenalan', 
+                    'Sekolah', 
+                    `Sesi 1\n(${dates.d1})`, 
+                    `Sesi 2\n(${dates.d2})`
+                ]],
                 body: tableData,
                 theme: 'grid',
-                headStyles: { fillColor: [30, 41, 59], textColor: 255 }, // slate-800
-                styles: { fontSize: 10, cellPadding: 3, valign: 'middle' },
+                headStyles: { fillColor: [30, 41, 59], textColor: 255, halign: 'center' }, // slate-800
+                styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
                 columnStyles: {
-                    0: { cellWidth: 15, halign: 'center' },
-                    1: { cellWidth: 80 },
-                    2: { cellWidth: 40 },
-                    3: { cellWidth: 90 },
-                    4: { cellWidth: 40 } // Ruang tandatangan
+                    0: { cellWidth: 12, halign: 'center' },
+                    1: { cellWidth: 70 },
+                    2: { cellWidth: 35, halign: 'center' },
+                    3: { cellWidth: 70 },
+                    4: { cellWidth: 40 }, // TT 1
+                    5: { cellWidth: 40 }  // TT 2
                 },
                 didDrawCell: function(data) {
-                    // Pastikan ruang tandatangan cukup tinggi sedikit
-                    if (data.column.index === 4 && data.section === 'body') {
-                        // Boleh tambah logik garis di sini jika perlu, tapi 'grid' theme sudah memadai
+                    if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
+                        // Ruang tandatangan dikawal oleh padding/height, AutoTable sedia ruangan cukup.
                     }
                 }
             });
 
             // Muat Turun
-            doc.save(`Kehadiran_${tarikhRaw}.pdf`);
+            const safeFileName = subjek.replace(/[^a-zA-Z0-9]/g, '_');
+            doc.save(`Kehadiran_${safeFileName}.pdf`);
+            
+            btnPdf.textContent = originalText;
+            btnPdf.disabled = false;
         });
     </script>
 </body>
