@@ -35,7 +35,7 @@
     </div>
 
     <div class="mb-6 text-center">
-        <img src="ikonppd.png" alt="Logo PPDAG" class="h-32 mx-auto drop-shadow-md rounded-full bg-white p-1" onerror="this.style.display='none'">
+        <img src="ikonppd.png" alt="Logo PPDAG" class="h-32 mx-auto" onerror="this.style.display='none'">
     </div>
 
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-100">
@@ -142,6 +142,14 @@
                                 Sahkan Kehadiran
                             </button>
                         </div>
+                        
+                        <div class="mt-6 p-4 border rounded-lg bg-slate-50 shadow-sm text-center">
+                            <h4 class="font-bold text-gray-800 mb-2">Penilaian Bengkel / SPLKPM</h4>
+                            <p class="text-sm text-gray-600 mb-4">Sila lengkapkan borang ini selepas selesai kedua-dua sesi.</p>
+                            <a id="btn_penilaian" href="#" target="_blank" class="block w-full px-6 py-2.5 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed transition-colors">
+                                Borang Maklum Balas
+                            </a>
+                        </div>
 
                     </div>
                 </div>
@@ -154,7 +162,7 @@
         </div>
     </div>
     
-    <div class="mt-6 text-center">
+    <div id="admin-link-container" class="mt-6 text-center">
         <a href="admin.html" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">Ke Log Masuk Admin &rarr;</a>
     </div>
 
@@ -175,18 +183,18 @@
             "SAINS (SR)": { s1: "2026-07-22", s2: "2026-07-23" },
             "MATEMATIK (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
             "SAINS KOMPUTER (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
-            "SAINS (SM)": { s1: "2026-08-12", s2: "2026-08-13" },
-            "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
-        };
-
-        let currentRecord = null;
-        let schoolsLoaded = false;
-        let schoolMap = {};
-        let tomSelectInstance = null;
+        const tomSelectInstance = null;
 
         function showView(viewName) {
             Object.values(views).forEach(v => v.classList.add('hidden-view'));
             views[viewName].classList.remove('hidden-view');
+            
+            const adminContainer = document.getElementById('admin-link-container');
+            if(viewName === 'check') {
+                adminContainer.classList.remove('hidden-view');
+            } else {
+                adminContainer.classList.add('hidden-view');
+            }
         }
 
         function showLoading(text = "Sila tunggu...") {
@@ -428,6 +436,19 @@
                 btn2.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
                 btn2.disabled = false;
                 btn2.onclick = () => handleAttendanceClick(2, currentRecord.sesi_2_tarikh);
+            }
+            
+            const btnPenilaian = document.getElementById('btn_penilaian');
+            if(currentRecord.sesi_1_hadir && currentRecord.sesi_2_hadir) {
+                btnPenilaian.href = "https://docs.google.com/forms/d/e/1FAIpQLSe7_WJEFtBO5xi1rSsCqZliZerkAEtNy8qIQOYuYJnx7-lGRw/viewform";
+                btnPenilaian.className = "block w-full px-6 py-2.5 rounded-lg font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-sm";
+            } else {
+                btnPenilaian.removeAttribute('href');
+                btnPenilaian.className = "block w-full px-6 py-2.5 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed transition-colors";
+                btnPenilaian.onclick = (e) => {
+                    e.preventDefault();
+                    showToast("Sila sahkan kehadiran untuk kedua-dua sesi terlebih dahulu.", "error");
+                };
             }
         }
 
