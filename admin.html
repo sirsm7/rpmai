@@ -1,3 +1,4 @@
+<!-- SURGICAL EDIT START: Tambah paparan peranan dalam jadual & ubah janaan PDF -->
 <!DOCTYPE html>
 <html lang="ms">
 <head>
@@ -54,6 +55,13 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
                     <input type="text" id="edit_ic" required pattern="[0-9]+" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50" readonly title="No KP tidak boleh diubah untuk elak ralat integrasi.">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Peranan</label>
+                    <select id="edit_peranan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="GURU">GURU</option>
+                        <option value="PEGAWAI">PEGAWAI</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
@@ -224,10 +232,12 @@
         async function loadSchools() {
             if (schoolsLoaded) return;
             try {
+                // SURGICAL EDIT START: Tukar jadual sekolah
                 const { data, error } = await supabaseClient
-                    .from('delima_data_sekolah')
+                    .from('smpid_sekolah_data')
                     .select('kod_sekolah, nama_sekolah')
                     .order('nama_sekolah', { ascending: true });
+                // SURGICAL EDIT END
 
                 if (error) throw error;
 
@@ -313,12 +323,13 @@
                     ? '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
                     : '<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
 
+                // SURGICAL EDIT START: Tambah paparan peranan di bawah nama
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">${i + 1}</td>
                         <td class="px-4 py-4">
                             <div class="text-sm font-bold text-slate-900 uppercase">${row.nama_penuh}</div>
-                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${row.peranan || 'GURU'}</div>
                         </td>
                         <td class="px-4 py-4 text-sm text-slate-600">
                             <div class="font-medium">${row.kod_sekolah}</div>
@@ -336,6 +347,7 @@
                         </td>
                     </tr>
                 `;
+                // SURGICAL EDIT END
             });
             tbody.innerHTML = html;
         }
@@ -378,6 +390,7 @@
             document.getElementById('edit_nama').value = record.nama_penuh;
             document.getElementById('edit_ic').value = record.ic_no;
             document.getElementById('edit_subjek').value = record.subjek;
+            document.getElementById('edit_peranan').value = record.peranan || 'GURU'; // SURGICAL EDIT: Tambah nilai peranan
             
             if(tomSelectInstance) {
                 tomSelectInstance.setValue(record.kod_sekolah);
@@ -402,12 +415,14 @@
 
             const subjek = document.getElementById('edit_subjek').value;
             const kodSekolah = document.getElementById('edit_sekolah').value;
+            const peranan = document.getElementById('edit_peranan').value; // SURGICAL EDIT: Ambil nilai peranan
             
             const kemaskiniData = {
                 nama_penuh: document.getElementById('edit_nama').value.toUpperCase(),
                 subjek: subjek,
                 kod_sekolah: kodSekolah,
                 nama_sekolah: schoolMap[kodSekolah],
+                peranan: peranan, // SURGICAL EDIT: Simpan peranan
                 sesi_1_tarikh: subjectDatesMap[subjek].s1,
                 sesi_2_tarikh: subjectDatesMap[subjek].s2
             };
@@ -487,22 +502,23 @@
                 doc.text(`Subjek: ${subjek}`, 14, 25);
             }
 
-            // Penyediaan Data Jadual
+            // SURGICAL EDIT START: Tambah peranan dalam tatasusunan data PDF
             const tableData = currentData.map((row, i) => [
                 i + 1,
-                row.nama_penuh,
+                `${row.nama_penuh}\n(${row.peranan || 'GURU'})`,
                 row.ic_no,
                 `${row.kod_sekolah}\n${row.nama_sekolah}`,
                 "", // TT Sesi 1
                 ""  // TT Sesi 2
             ]);
+            // SURGICAL EDIT END
 
             // Cetak Jadual
             doc.autoTable({
                 startY: startYTable,
                 head: [[
                     'Bil', 
-                    'Nama Penuh', 
+                    'Nama Penuh & Peranan', // SURGICAL EDIT: Ubah tajuk kolum
                     'No. Kad Pengenalan', 
                     'Sekolah', 
                     `Sesi 1\n(${dates.d1})`, 
@@ -537,3 +553,4 @@
     </script>
 </body>
 </html>
+<!-- SURGICAL EDIT END -->
