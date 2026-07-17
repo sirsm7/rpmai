@@ -366,6 +366,25 @@
             showLoading("Menyimpan pendaftaran...");
 
             try {
+                /* [COMMENT SYNTAX] SURGICAL EDIT START: Semak kuota peranan */
+                if (peranan === 'PEGAWAI' || peranan === 'JURULATIH') {
+                    const hadMaksimum = peranan === 'PEGAWAI' ? 10 : 8;
+                    
+                    const { count, error: countError } = await supabaseClient
+                        .from('edaftar_bengkel_ppdag')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('peranan', peranan);
+
+                    if (countError) throw countError;
+
+                    if (count >= hadMaksimum) {
+                        showToast(`Maaf, kuota pendaftaran ${peranan} telah penuh (${count}/${hadMaksimum}).`, "error");
+                        showView('register');
+                        return;
+                    }
+                }
+                /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
                 let insertData = {
                     ic_no: ic,
                     nama_penuh: nama,

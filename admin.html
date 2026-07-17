@@ -133,7 +133,6 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                     <div class="w-full md:w-1/2">
                         <label for="filter_subjek" class="block text-sm font-medium text-gray-700 mb-1">Saring Mengikut Kumpulan</label>
-                        <!-- SURGICAL EDIT START: Gabung subjek SM -->
                         <select id="filter_subjek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 bg-gray-50">
                             <option value="">-- Sila Pilih Kumpulan --</option>
                             <option value="G1">MATEMATIK (SR) - 20 & 21 Julai 2026</option>
@@ -141,7 +140,6 @@
                             <option value="G3">MATEMATIK & SAINS KOMPUTER (SM) - 10 & 11 Ogos 2026</option>
                             <option value="G4">SAINS & SAINS TULEN (SM) - 12 & 13 Ogos 2026</option>
                         </select>
-                        <!-- SURGICAL EDIT END -->
                     </div>
                     <div class="flex gap-3 w-full md:w-auto">
                         <button id="btn-cari" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-colors">Papar</button>
@@ -201,14 +199,12 @@
         let editingId = null;
         let deletingId = null;
 
-        // SURGICAL EDIT START: Mapping dinamik Kumpulan & Sesi
         const groupConfig = {
             "G1": { label: "MATEMATIK (SR)", subjects: ["MATEMATIK (SR)"], d1: "20 Julai 2026", d2: "21 Julai 2026", exemptS1: 1, exemptS2: 2 },
             "G2": { label: "SAINS (SR)", subjects: ["SAINS (SR)"], d1: "22 Julai 2026", d2: "23 Julai 2026", exemptS1: 3, exemptS2: 4 },
             "G3": { label: "MATEMATIK & SAINS KOMPUTER (SM)", subjects: ["MATEMATIK (SM)", "SAINS KOMPUTER (SM)"], d1: "10 Ogos 2026", d2: "11 Ogos 2026", exemptS1: 5, exemptS2: 6 },
             "G4": { label: "SAINS & SAINS TULEN (SM)", subjects: ["SAINS (SM)", "SAINS TULEN (SM)"], d1: "12 Ogos 2026", d2: "13 Ogos 2026", exemptS1: 7, exemptS2: 8 }
         };
-        // SURGICAL EDIT END
 
         const subjectDatesMap = {
             "MATEMATIK (SR)": { s1: "2026-07-20", s2: "2026-07-21" },
@@ -228,6 +224,35 @@
             document.getElementById('msg-modal').classList.add('hidden-view');
         }
 
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Semakan Kuota Global */
+        async function loadDashboardStats() {
+            try {
+                const { count: pegCount } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('peranan', 'PEGAWAI');
+
+                const { count: jurCount } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('peranan', 'JURULATIH');
+                
+                const { count: guruCount } = await supabaseClient
+                    .from('edaftar_bengkel_ppdag')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('peranan', 'GURU');
+
+                document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
+                document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 8`;
+                document.getElementById('sum_guru').innerHTML = `${guruCount || 0} <span class="text-sm font-normal text-blue-600">(Semua)</span>`;
+                
+                document.getElementById('summary-cards').classList.remove('hidden-view');
+            } catch (err) {
+                console.error("Ralat stat:", err);
+            }
+        }
+        /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const pwd = document.getElementById('admin_pwd').value;
@@ -237,6 +262,9 @@
                 document.getElementById('admin_pwd').value = '';
                 document.getElementById('login-error').classList.add('hidden-view');
                 loadSchools();
+                /* [COMMENT SYNTAX] SURGICAL EDIT START: Panggil fungsi stat */
+                loadDashboardStats();
+                /* [COMMENT SYNTAX] SURGICAL EDIT END */
             } else {
                 document.getElementById('login-error').classList.remove('hidden-view');
             }
@@ -303,11 +331,9 @@
 
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
             btnPdf.disabled = true;
-            summary.classList.add('hidden-view');
             currentData = [];
 
             try {
-                // SURGICAL EDIT START: Tukar carian GURU guna .in
                 const { data: guruData, error: guruErr } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
                     .select('*')
@@ -315,7 +341,6 @@
                     .eq('peranan', 'GURU')
                     .order('nama_sekolah', { ascending: true })
                     .order('nama_penuh', { ascending: true });
-                // SURGICAL EDIT END
 
                 if (guruErr) throw guruErr;
 
@@ -335,9 +360,11 @@
 
                 if (jurErr) throw jurErr;
 
+                /* [COMMENT SYNTAX] SURGICAL EDIT START: Label spesifik saringan untuk Guru */
                 document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
                 document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 8`;
-                document.getElementById('sum_guru').textContent = `${(guruData || []).length}`;
+                document.getElementById('sum_guru').innerHTML = `${(guruData || []).length} <span class="text-sm font-normal text-blue-600">(Saringan)</span>`;
+                /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
                 let paddedPegawai = [...(pegData || [])];
                 while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI' });
@@ -385,7 +412,6 @@
                 const role = row.peranan || 'GURU';
                 const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
                 
-                // SURGICAL EDIT START: Papar 2 Sesi Tepat
                 const hadir1 = isExempt ? row[`sesi_${conf.exemptS1}_hadir`] : row.sesi_1_hadir;
                 const hadir2 = isExempt ? row[`sesi_${conf.exemptS2}_hadir`] : row.sesi_2_hadir;
 
@@ -396,7 +422,6 @@
                 const badge2 = hadir2 
                     ? '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
                     : '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
-                // SURGICAL EDIT END
 
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors">
@@ -446,7 +471,14 @@
                 if(error) throw error;
                 
                 closeDelete();
-                fetchTableData();
+                
+                /* [COMMENT SYNTAX] SURGICAL EDIT START: Muat semula stat global */
+                loadDashboardStats();
+                if(document.getElementById('filter_subjek').value !== '') {
+                    fetchTableData();
+                }
+                /* [COMMENT SYNTAX] SURGICAL EDIT END */
+                
                 showMsg("Berjaya", "Rekod telah dipadam.");
             } catch (err) {
                 console.error(err);
@@ -513,7 +545,14 @@
                 if(error) throw error;
 
                 closeEdit();
-                fetchTableData();
+                
+                /* [COMMENT SYNTAX] SURGICAL EDIT START: Muat semula stat global */
+                loadDashboardStats();
+                if(document.getElementById('filter_subjek').value !== '') {
+                    fetchTableData();
+                }
+                /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
                 showMsg("Berjaya", "Rekod dikemaskini.");
             } catch (err) {
                 console.error(err);
@@ -558,7 +597,6 @@
             const logoData = await getLogoBase64();
             let startYTable = 38;
 
-            // SURGICAL EDIT START: Ubah header PDF guna label konfig
             if (logoData) {
                 doc.addImage(logoData, 'PNG', 14, 10, 32, 24); 
                 
@@ -631,7 +669,6 @@
 
             const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
             doc.save(`Kehadiran_${safeFileName}.pdf`);
-            // SURGICAL EDIT END
             
             btnPdf.textContent = originalText;
             btnPdf.disabled = false;
