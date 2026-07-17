@@ -92,8 +92,8 @@
                             <option value="PEGAWAI">PEGAWAI</option>
                         </select>
                     </div>
-                    
-                    <div id="div_reg_subjek">
+
+                    <div id="subjek_container">
                         <label for="reg_subjek" class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
                         <select id="reg_subjek" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">-- Pilih Subjek --</option>
@@ -108,7 +108,7 @@
                     </div>
                     
                     <div>
-                        <label for="reg_sekolah" class="block text-sm font-medium text-gray-700 mb-1">Sekolah / Jabatan</label>
+                        <label for="reg_sekolah" class="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
                         <select id="reg_sekolah" required placeholder="Cari nama sekolah..." class="w-full border-gray-300 rounded-lg">
                             <option value="">-- Memuatkan Sekolah... --</option>
                         </select>
@@ -125,9 +125,9 @@
                     <h3 id="dash_nama" class="font-bold text-gray-800 uppercase"></h3>
                     <p id="dash_ic" class="text-sm text-gray-600"></p>
                     <div class="mt-3 pt-3 border-t border-blue-200 text-sm">
-                        <p><span class="font-semibold text-gray-700">Peranan:</span> <span id="dash_peranan" class="text-gray-800"></span></p>
+                        <p><span class="font-semibold text-gray-700">Peranan:</span> <span id="dash_peranan" class="text-gray-800 font-medium"></span></p>
                         <p id="dash_subjek_container"><span class="font-semibold text-gray-700">Subjek:</span> <span id="dash_subjek" class="text-gray-800"></span></p>
-                        <p><span class="font-semibold text-gray-700">Lokasi:</span> <span id="dash_sekolah" class="text-gray-800"></span></p>
+                        <p><span class="font-semibold text-gray-700">Sekolah/Organisasi:</span> <span id="dash_sekolah" class="text-gray-800"></span></p>
                     </div>
                 </div>
 
@@ -271,14 +271,8 @@
                 if (error) throw error;
 
                 const select = document.getElementById('reg_sekolah');
-                select.innerHTML = '<option value="">-- Cari Sekolah / Jabatan... --</option>';
+                select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
                 
-                const ppdOption = document.createElement('option');
-                ppdOption.value = 'PPDAG';
-                ppdOption.textContent = 'PEJABAT PENDIDIKAN DAERAH ALOR GAJAH (PPDAG)';
-                select.appendChild(ppdOption);
-                schoolMap['PPDAG'] = 'PEJABAT PENDIDIKAN DAERAH ALOR GAJAH';
-
                 if(data && data.length > 0){
                     data.forEach(s => {
                         schoolMap[s.kod_sekolah] = s.nama_sekolah;
@@ -297,7 +291,7 @@
                         field: "text",
                         direction: "asc"
                     },
-                    placeholder: "Cari nama lokasi atau kod...",
+                    placeholder: "Cari nama sekolah atau kod...",
                 });
 
                 schoolsLoaded = true;
@@ -338,20 +332,20 @@
             }
         }
 
+        // KAWALAN PERANAN (SEMBUNYI SUBJEK JIKA PEGAWAI)
         document.getElementById('reg_peranan').addEventListener('change', (e) => {
-            const val = e.target.value;
-            const divSubjek = document.getElementById('div_reg_subjek');
-            const selSubjek = document.getElementById('reg_subjek');
-            const regTarikhInfo = document.getElementById('reg_tarikh_info');
+            const isPegawai = e.target.value === 'PEGAWAI';
+            const subjekContainer = document.getElementById('subjek_container');
+            const subjekInput = document.getElementById('reg_subjek');
 
-            if (val === 'PEGAWAI') {
-                divSubjek.classList.add('hidden-view');
-                selSubjek.removeAttribute('required');
-                selSubjek.value = '';
-                regTarikhInfo.textContent = '';
+            if(isPegawai) {
+                subjekContainer.classList.add('hidden-view');
+                subjekInput.required = false;
+                subjekInput.value = '';
+                document.getElementById('reg_tarikh_info').textContent = '';
             } else {
-                divSubjek.classList.remove('hidden-view');
-                selSubjek.setAttribute('required', 'required');
+                subjekContainer.classList.remove('hidden-view');
+                subjekInput.required = true;
             }
         });
 
@@ -360,39 +354,39 @@
             const ic = document.getElementById('reg_ic').value;
             const nama = document.getElementById('reg_nama').value.toUpperCase();
             const peranan = document.getElementById('reg_peranan').value;
-            let subjek = document.getElementById('reg_subjek').value;
+            const subjek = document.getElementById('reg_subjek').value;
             const kodSekolah = document.getElementById('reg_sekolah').value;
 
+            // Base validation
             if(!ic || !nama || !peranan || !kodSekolah) {
-                showToast("Sila lengkapkan semua maklumat wajib", "error");
+                showToast("Sila lengkapkan semua maklumat", "error");
                 return;
             }
-
             if(peranan === 'GURU' && !subjek) {
                 showToast("Sila pilih subjek", "error");
                 return;
             }
 
-            if(peranan === 'PEGAWAI') {
-                subjek = null;
-            }
-
             const namaSekolah = schoolMap[kodSekolah];
-            const tarikhs = subjectDatesMap[subjek] || { s1: null, s2: null };
             
             showLoading("Menyimpan pendaftaran...");
 
             try {
-                const insertData = {
+                // Bina data insert secara dinamik (tidak hantar subjek/tarikh jika PEGAWAI)
+                let insertData = {
                     ic_no: ic,
                     nama_penuh: nama,
                     peranan: peranan,
-                    subjek: subjek,
                     kod_sekolah: kodSekolah,
-                    nama_sekolah: namaSekolah,
-                    sesi_1_tarikh: tarikhs.s1,
-                    sesi_2_tarikh: tarikhs.s2
+                    nama_sekolah: namaSekolah
                 };
+
+                if(peranan === 'GURU') {
+                    const tarikhs = subjectDatesMap[subjek];
+                    insertData.subjek = subjek;
+                    insertData.sesi_1_tarikh = tarikhs.s1;
+                    insertData.sesi_2_tarikh = tarikhs.s2;
+                }
 
                 const { data, error } = await supabaseClient
                     .from('edaftar_bengkel_ppdag')
@@ -404,24 +398,26 @@
 
                 currentRecord = data;
                 
+                // Reset form state
                 document.getElementById('register-form').reset();
+                document.getElementById('subjek_container').classList.remove('hidden-view');
+                document.getElementById('reg_subjek').required = true;
+
                 if(tomSelectInstance) tomSelectInstance.clear();
-                
-                document.getElementById('div_reg_subjek').classList.remove('hidden-view');
-                document.getElementById('reg_subjek').setAttribute('required', 'required');
                 
                 setupDashboard();
                 showView('dashboard');
                 showToast("Pendaftaran berjaya", "success");
             } catch (err) {
                 console.error("Ralat daftar:", err);
-                showToast("Gagal mendaftar. No KP mungkin wujud.", "error");
+                showToast("Gagal mendaftar. No KP mungkin wujud atau ralat data.", "error");
                 showView('register');
             }
         }
 
-        function handleAttendanceClick(sesi, tarikh) {
-            if (currentRecord.peranan !== 'PEGAWAI' && !isDateArrived(tarikh)) {
+        function handleAttendanceClick(sesi, tarikh, peranan) {
+            // PEGAWAI dikecualikan daripada semakan tarikh
+            if (peranan !== 'PEGAWAI' && !isDateArrived(tarikh)) {
                 showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
                 return;
             }
@@ -463,21 +459,22 @@
 
             document.getElementById('dash_nama').textContent = currentRecord.nama_penuh;
             document.getElementById('dash_ic').textContent = currentRecord.ic_no;
-            document.getElementById('dash_peranan').textContent = currentRecord.peranan || '-';
             
-            const dashSubjekContainer = document.getElementById('dash_subjek_container');
+            const peranan = currentRecord.peranan || 'GURU'; // Default fallback
+            document.getElementById('dash_peranan').textContent = peranan;
             
-            if (currentRecord.peranan === 'PEGAWAI') {
-                dashSubjekContainer.classList.add('hidden-view');
-                document.getElementById('dash_tarikh_1').textContent = "Bebas / Sepanjang Bengkel";
-                document.getElementById('dash_tarikh_2').textContent = "Bebas / Sepanjang Bengkel";
+            // Susun paparan bergantung pada peranan
+            if (peranan === 'PEGAWAI') {
+                document.getElementById('dash_subjek_container').classList.add('hidden-view');
+                document.getElementById('dash_tarikh_1').textContent = "Tiada Tarikh Khusus";
+                document.getElementById('dash_tarikh_2').textContent = "Tiada Tarikh Khusus";
             } else {
-                dashSubjekContainer.classList.remove('hidden-view');
+                document.getElementById('dash_subjek_container').classList.remove('hidden-view');
                 document.getElementById('dash_subjek').textContent = currentRecord.subjek;
                 document.getElementById('dash_tarikh_1').textContent = formatDateDisplay(currentRecord.sesi_1_tarikh);
                 document.getElementById('dash_tarikh_2').textContent = formatDateDisplay(currentRecord.sesi_2_tarikh);
             }
-            
+
             document.getElementById('dash_sekolah').textContent = `${currentRecord.kod_sekolah} - ${currentRecord.nama_sekolah}`;
 
             const btn1 = document.getElementById('btn_hadir_1');
@@ -491,7 +488,7 @@
                 btn1.textContent = "Sahkan Kehadiran";
                 btn1.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
                 btn1.disabled = false;
-                btn1.onclick = () => handleAttendanceClick(1, currentRecord.sesi_1_tarikh);
+                btn1.onclick = () => handleAttendanceClick(1, currentRecord.sesi_1_tarikh, peranan);
             }
 
             if(currentRecord.sesi_2_hadir) {
@@ -502,7 +499,7 @@
                 btn2.textContent = "Sahkan Kehadiran";
                 btn2.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
                 btn2.disabled = false;
-                btn2.onclick = () => handleAttendanceClick(2, currentRecord.sesi_2_tarikh);
+                btn2.onclick = () => handleAttendanceClick(2, currentRecord.sesi_2_tarikh, peranan);
             }
             
             const btnPenilaian = document.getElementById('btn_penilaian');
@@ -542,11 +539,12 @@
             document.getElementById('ic_check').value = '';
             document.getElementById('reg_tarikh_info').textContent = '';
             document.getElementById('register-form').reset();
+            
+            // Reset UI rules for Peranan
+            document.getElementById('subjek_container').classList.remove('hidden-view');
+            document.getElementById('reg_subjek').required = true;
+
             if(tomSelectInstance) tomSelectInstance.clear();
-            
-            document.getElementById('div_reg_subjek').classList.remove('hidden-view');
-            document.getElementById('reg_subjek').setAttribute('required', 'required');
-            
             showView('check');
         });
 
