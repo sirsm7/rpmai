@@ -183,7 +183,14 @@
             "SAINS (SR)": { s1: "2026-07-22", s2: "2026-07-23" },
             "MATEMATIK (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
             "SAINS KOMPUTER (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
-        const tomSelectInstance = null;
+            "SAINS (SM)": { s1: "2026-08-12", s2: "2026-08-13" },
+            "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
+        };
+        
+        let tomSelectInstance = null;
+        let currentRecord = null;
+        let schoolsLoaded = false;
+        let schoolMap = {};
 
         function showView(viewName) {
             Object.values(views).forEach(v => v.classList.add('hidden-view'));
