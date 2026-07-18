@@ -203,7 +203,6 @@ async function registerUser(e) {
     showLoading("Menyimpan pendaftaran...");
 
     try {
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Semak kuota peranan */
         if (peranan === 'PEGAWAI' || peranan === 'JURULATIH') {
             const hadMaksimum = peranan === 'PEGAWAI' ? 10 : 8;
             
@@ -220,7 +219,6 @@ async function registerUser(e) {
                 return;
             }
         }
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         let insertData = {
             ic_no: ic,
@@ -264,12 +262,10 @@ async function registerUser(e) {
 }
 
 function handleAttendanceClick(sesi, tarikh, peranan) {
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Semak isDateArrived untuk semua peranan */
     if (!isDateArrived(tarikh)) {
         showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
         return;
     }
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
     markAttendance(sesi);
 }
 
@@ -302,6 +298,133 @@ async function markAttendance(sesi) {
     }
 }
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil */
+function getBase64Image(imgUrl) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = imgUrl;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(null);
+    });
+}
+
+async function generateCertificate() {
+    const peranan = currentRecord.peranan || 'GURU';
+    const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
+    let tarikhTerpilih = [];
+
+    if (isExempt) {
+        const checkboxes = document.querySelectorAll('.cert-checkbox:checked');
+        if (checkboxes.length === 0) {
+            showToast("Sila pilih sekurang-kurangnya satu tarikh.", "error");
+            return;
+        }
+        checkboxes.forEach(cb => {
+            tarikhTerpilih.push(cb.value);
+        });
+    } else {
+        const t1 = formatDateDisplay(currentRecord.sesi_1_tarikh);
+        const t2 = formatDateDisplay(currentRecord.sesi_2_tarikh);
+        tarikhTerpilih.push(`${t1} & ${t2}`);
+    }
+
+    const btn = document.getElementById('btn_jana_sijil');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menjana...`;
+    btn.disabled = true;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const logoData = await getBase64Image('ikonppdag.png');
+        const signData = await getBase64Image('tttnhj.png');
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const centerX = pageWidth / 2;
+
+        if (logoData) {
+            doc.addImage(logoData, 'PNG', centerX - 20, 20, 40, 40);
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(28);
+        doc.setTextColor(30, 64, 175); 
+        doc.text("SIJIL PENYERTAAN", centerX, 80, { align: 'center' });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(14);
+        doc.setTextColor(75, 85, 99);
+        doc.text("Dengan ini disahkan bahawa", centerX, 95, { align: 'center' });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(20);
+        doc.setTextColor(17, 24, 39);
+        doc.text(currentRecord.nama_penuh, centerX, 110, { align: 'center' });
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 118, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setTextColor(75, 85, 99);
+        doc.text("telah menyertai", centerX, 130, { align: 'center' });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(30, 64, 175);
+        doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 142, { align: 'center' });
+        doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 150, { align: 'center' });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(14);
+        doc.setTextColor(75, 85, 99);
+        const perananTeks = peranan === 'GURU' ? `sebagai ${peranan} (${currentRecord.subjek})` : `sebagai ${peranan}`;
+        doc.text(perananTeks, centerX, 162, { align: 'center' });
+
+        let tarikhGabung = tarikhTerpilih.join(', ');
+        doc.setFontSize(12);
+        doc.text(`pada ${tarikhGabung}`, centerX, 170, { align: 'center' });
+
+        if (signData) {
+            doc.addImage(signData, 'PNG', centerX - 25, 175, 50, 20);
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(17, 24, 39);
+        doc.text("PEGAWAI PENDIDIKAN DAERAH", centerX, 198, { align: 'center' });
+        doc.setFont("helvetica", "normal");
+        doc.text("Pejabat Pendidikan Daerah Alor Gajah", centerX, 204, { align: 'center' });
+
+        const safeFileName = currentRecord.nama_penuh.replace(/[^a-zA-Z0-9]/g, '_');
+        doc.save(`Sijil_${safeFileName}.pdf`);
+
+        showToast("Sijil berjaya dimuat turun.", "success");
+    } catch (err) {
+        console.error("Ralat sijil:", err);
+        showToast("Gagal menjana sijil.", "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+document.getElementById('btn_jana_sijil').addEventListener('click', generateCertificate);
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
+
 function setupDashboard() {
     if(!currentRecord) return;
 
@@ -326,14 +449,24 @@ function setupDashboard() {
     
     const totalSessions = isExempt ? 8 : 2;
     let allAttended = true;
+    
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjejakan kehadiran untuk sijil */
+    let anyAttended = false;
+    let attendedDates = [];
+    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     for (let i = 1; i <= totalSessions; i++) {
         const isAttended = currentRecord[`sesi_${i}_hadir`];
         if (!isAttended) allAttended = false;
         
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Papar tarikh sebenar untuk PEGAWAI & JURULATIH */
         const tarikhDisplay = isExempt ? formatDateDisplay(absoluteDates[i-1]) : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
         const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
+        
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Simpan tarikh hadir */
+        if (isAttended) {
+            anyAttended = true;
+            if (isExempt) attendedDates.push(tarikhDisplay);
+        }
         /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         const div = document.createElement('div');
@@ -358,6 +491,34 @@ function setupDashboard() {
         sessionsContainer.appendChild(div);
     }
     
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Urus paparan Sijil */
+    const sijilContainer = document.getElementById('sijil_container');
+    const sijilOptions = document.getElementById('sijil_options_container');
+    const sijilCheckboxes = document.getElementById('sijil_checkboxes');
+    
+    sijilOptions.classList.add('hidden-view');
+    sijilCheckboxes.innerHTML = '';
+
+    if ((isExempt && anyAttended) || (!isExempt && allAttended)) {
+        sijilContainer.classList.remove('hidden-view');
+        
+        if (isExempt) {
+            sijilOptions.classList.remove('hidden-view');
+            attendedDates.forEach((tarikh, idx) => {
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-2 text-sm text-gray-700 cursor-pointer";
+                label.innerHTML = `
+                    <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500" value="${tarikh}" checked>
+                    <span>${tarikh}</span>
+                `;
+                sijilCheckboxes.appendChild(label);
+            });
+        }
+    } else {
+        sijilContainer.classList.add('hidden-view');
+    }
+    /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
     const btnPenilaian = document.getElementById('btn_penilaian');
     if(allAttended) {
         btnPenilaian.href = "https://docs.google.com/forms/d/e/1FAIpQLSe7_WJEFtBO5xi1rSsCqZliZerkAEtNy8qIQOYuYJnx7-lGRw/viewform";
