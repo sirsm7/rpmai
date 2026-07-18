@@ -450,8 +450,7 @@ function setupDashboard() {
     const totalSessions = isExempt ? 8 : 2;
     let allAttended = true;
     
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjejakan kehadiran untuk sijil */
-    let anyAttended = false;
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjejakan kehadiran untuk sijil (Dipermudahkan) */
     let attendedDates = [];
     /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
@@ -462,10 +461,9 @@ function setupDashboard() {
         const tarikhDisplay = isExempt ? formatDateDisplay(absoluteDates[i-1]) : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
         const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
         
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Simpan tarikh hadir */
-        if (isAttended) {
-            anyAttended = true;
-            if (isExempt) attendedDates.push(tarikhDisplay);
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Simpan semua tarikh untuk pilihan Pegawai */
+        if (isExempt) {
+             attendedDates.push(tarikhDisplay);
         }
         /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
@@ -491,31 +489,27 @@ function setupDashboard() {
         sessionsContainer.appendChild(div);
     }
     
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Urus paparan Sijil */
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sentiasa papar Sijil */
     const sijilContainer = document.getElementById('sijil_container');
     const sijilOptions = document.getElementById('sijil_options_container');
     const sijilCheckboxes = document.getElementById('sijil_checkboxes');
     
-    sijilOptions.classList.add('hidden-view');
+    sijilContainer.classList.remove('hidden-view');
     sijilCheckboxes.innerHTML = '';
 
-    if ((isExempt && anyAttended) || (!isExempt && allAttended)) {
-        sijilContainer.classList.remove('hidden-view');
-        
-        if (isExempt) {
-            sijilOptions.classList.remove('hidden-view');
-            attendedDates.forEach((tarikh, idx) => {
-                const label = document.createElement('label');
-                label.className = "flex items-center space-x-2 text-sm text-gray-700 cursor-pointer";
-                label.innerHTML = `
-                    <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500" value="${tarikh}" checked>
-                    <span>${tarikh}</span>
-                `;
-                sijilCheckboxes.appendChild(label);
-            });
-        }
+    if (isExempt) {
+        sijilOptions.classList.remove('hidden-view');
+        attendedDates.forEach((tarikh, idx) => {
+            const label = document.createElement('label');
+            label.className = "flex items-center space-x-2 text-sm text-gray-700 cursor-pointer";
+            label.innerHTML = `
+                <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500" value="${tarikh}" checked>
+                <span>${tarikh}</span>
+            `;
+            sijilCheckboxes.appendChild(label);
+        });
     } else {
-        sijilContainer.classList.add('hidden-view');
+        sijilOptions.classList.add('hidden-view');
     }
     /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
