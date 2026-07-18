@@ -1,3 +1,4 @@
+/* STREAMING_CHUNK:Konfigurasi dan pembolehubah awalan... */
 const SUPABASE_URL = 'https://app.tech4ag.my';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -31,11 +32,33 @@ const absoluteDates = [
 ];
 /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Koordinat bengkel dan fungsi jarak */
+const WORKSHOP_LAT = 2.3448043344238445;
+const WORKSHOP_LNG = 102.1049791621177;
+const MAX_RADIUS_METERS = 200;
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Jejari bumi dalam meter
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const deltaP = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(deltaP / 2) * Math.sin(deltaP / 2) +
+              Math.cos(p1) * Math.cos(p2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; 
+}
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
+
 let tomSelectInstance = null;
 let currentRecord = null;
 let schoolsLoaded = false;
 let schoolMap = {};
 
+/* STREAMING_CHUNK:Fungsi utiliti paparan dan format... */
 function showView(viewName) {
     Object.values(views).forEach(v => v.classList.add('hidden-view'));
     views[viewName].classList.remove('hidden-view');
@@ -92,6 +115,7 @@ function isDateArrived(dateString) {
     return todayDate >= targetDate;
 }
 
+/* STREAMING_CHUNK:Sistem pendaftaran dan carian rekod... */
 async function loadSchools() {
     if (schoolsLoaded) return;
     try {
@@ -261,13 +285,64 @@ async function registerUser(e) {
     }
 }
 
-function handleAttendanceClick(sesi, tarikh, peranan) {
+/* STREAMING_CHUNK:Pengesahan kehadiran dan GPS... */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Pintasan kawalan lokasi GPS */
+async function handleAttendanceClick(sesi, tarikh, peranan) {
     if (!isDateArrived(tarikh)) {
         showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
         return;
     }
-    markAttendance(sesi);
+    
+    if (peranan === 'GURU') {
+        if (!navigator.geolocation) {
+            showToast("Sistem GPS tidak disokong oleh pelayar anda.", "error");
+            return;
+        }
+
+        showLoading("Mengesahkan lokasi anda...");
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                
+                const distance = calculateDistance(userLat, userLng, WORKSHOP_LAT, WORKSHOP_LNG);
+                
+                if (distance <= MAX_RADIUS_METERS) {
+                    markAttendance(sesi);
+                } else {
+                    showView('dashboard');
+                    showToast(`Pengesahan gagal. Anda berada ${Math.round(distance)} meter dari lokasi bengkel. Jarak dibenarkan: 200 meter.`, "error");
+                }
+            },
+            (error) => {
+                showView('dashboard');
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        showToast("Sila benarkan akses lokasi (GPS) untuk mengesahkan kehadiran.", "error");
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        showToast("Maklumat lokasi tidak tersedia. Pastikan GPS peranti diaktifkan.", "error");
+                        break;
+                    case error.TIMEOUT:
+                        showToast("Carian lokasi tamat tempoh. Sila cuba lagi.", "error");
+                        break;
+                    default:
+                        showToast("Ralat tidak diketahui semasa mengesahkan lokasi.", "error");
+                        break;
+                }
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        markAttendance(sesi);
+    }
 }
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 async function markAttendance(sesi) {
     if(!currentRecord) return;
@@ -298,6 +373,7 @@ async function markAttendance(sesi) {
     }
 }
 
+/* STREAMING_CHUNK:Penjanaan PDF Sijil... */
 /* [COMMENT SYNTAX] SURGICAL EDIT START: Buang logik pratonton sijil */
 function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
@@ -451,6 +527,18 @@ async function createPDFDocument() {
 
 // Butang Jana & Muat Turun
 async function generateCertificate() {
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Semakan rekod sesi untuk GURU */
+    if (currentRecord.peranan === 'GURU') {
+        const isSesi1Hadir = currentRecord.sesi_1_hadir === true;
+        const isSesi2Hadir = currentRecord.sesi_2_hadir === true;
+        
+        if (!isSesi1Hadir || !isSesi2Hadir) {
+            showToast("Sijil hanya boleh dimuat turun jika anda hadir kedua-dua sesi.", "error");
+            return;
+        }
+    }
+    /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
     const btn = document.getElementById('btn_jana_sijil');
     if(!btn) return;
     const originalText = btn.innerHTML;
@@ -480,6 +568,7 @@ const btnJana = document.getElementById('btn_jana_sijil');
 if(btnJana) btnJana.addEventListener('click', generateCertificate);
 /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
+/* STREAMING_CHUNK:Penyediaan papan pemuka (dashboard)... */
 function setupDashboard() {
     if(!currentRecord) return;
 
@@ -583,6 +672,7 @@ function setupDashboard() {
     }
 }
 
+/* STREAMING_CHUNK:Pemasangan event listener DOM... */
 document.getElementById('check-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const ic = document.getElementById('ic_check').value.trim();
