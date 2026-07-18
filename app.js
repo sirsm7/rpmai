@@ -298,7 +298,7 @@ async function markAttendance(sesi) {
     }
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil dengan font CDN */
 function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -316,10 +316,11 @@ function getBase64Image(imgUrl) {
     });
 }
 
-// Menyuntik font Cursive (Great Vibes) ke Base64 secara dinamik via CDN Google Fonts
+// Menyuntik font Cursive (Great Vibes) ke Base64 secara dinamik via CDN stabil
 async function getCursiveFontBase64() {
     try {
-        const response = await fetch('https://fonts.gstatic.com/s/greatvibes/v18/RWmMoKWR9v4ksMfaWd_JN9XFiaQ.ttf');
+        const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/greatvibes/GreatVibes-Regular.ttf');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const buffer = await response.arrayBuffer();
         const bytes = new Uint8Array(buffer);
         let binary = '';
@@ -374,7 +375,7 @@ async function createPDFDocument() {
         doc.addImage(logoData, 'PNG', centerX - 30, 25, 60, 40);
     }
 
-    // Suntik Font Cursive ke dalam VFS jsPDF
+    // Suntik Font Cursive ke dalam VFS jsPDF jika berjaya
     if (fontB64) {
         doc.addFileToVFS('Cursive.ttf', fontB64);
         doc.addFont('Cursive.ttf', 'Cursive', 'normal');
@@ -441,8 +442,9 @@ async function createPDFDocument() {
 // Butang Jana & Muat Turun
 async function generateCertificate() {
     const btn = document.getElementById('btn_jana_sijil');
+    if(!btn) return;
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menjana...`;
+    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menjana...`;
     btn.disabled = true;
 
     try {
@@ -466,8 +468,9 @@ async function generateCertificate() {
 // Butang Pratonton
 async function previewCertificate() {
     const btn = document.getElementById('btn_preview_sijil');
+    if(!btn) return;
     const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memuatkan...`;
+    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-blue-700 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memuatkan...`;
     btn.disabled = true;
 
     try {
@@ -494,17 +497,22 @@ async function previewCertificate() {
     }
 }
 
-document.getElementById('btn_jana_sijil').addEventListener('click', generateCertificate);
-document.getElementById('btn_preview_sijil').addEventListener('click', previewCertificate);
+const btnJana = document.getElementById('btn_jana_sijil');
+const btnPreview = document.getElementById('btn_preview_sijil');
+const btnClosePreview = document.getElementById('btn_close_preview');
 
-// Tutup Modal Pratonton
-document.getElementById('btn_close_preview').addEventListener('click', () => {
-    const modal = document.getElementById('preview_modal');
-    const iframe = document.getElementById('preview_iframe');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    iframe.src = '';
-});
+if(btnJana) btnJana.addEventListener('click', generateCertificate);
+if(btnPreview) btnPreview.addEventListener('click', previewCertificate);
+
+if(btnClosePreview) {
+    btnClosePreview.addEventListener('click', () => {
+        const modal = document.getElementById('preview_modal');
+        const iframe = document.getElementById('preview_iframe');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        iframe.src = '';
+    });
+}
 /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function setupDashboard() {
