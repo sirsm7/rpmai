@@ -288,13 +288,10 @@ async function registerUser(e) {
 /* STREAMING_CHUNK:Pengesahan kehadiran dan GPS... */
 /* [COMMENT SYNTAX] SURGICAL EDIT START: Pintasan kawalan lokasi GPS */
 async function handleAttendanceClick(sesi, tarikh, peranan) {
-    /* TODO: BUKA KOMEN DI BAWAH APABILA SELESAI UJIAN */
-    /*
     if (!isDateArrived(tarikh)) {
         showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
         return;
     }
-    */
     
     // LOGIK BAHARU: Jika BUKAN PEGAWAI dan BUKAN JURULATIH, wajib GPS
     const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
