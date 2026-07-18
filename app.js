@@ -370,9 +370,9 @@ async function createPDFDocument() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const centerX = pageWidth / 2;
 
-    // 2. Logo dilebarkan sedikit (Width: 60)
+    // 2. Logo dilebarkan sedikit (Width: 40)
     if (logoData) {
-        doc.addImage(logoData, 'PNG', centerX - 30, 25, 60, 40);
+        doc.addImage(logoData, 'PNG', centerX - 20, 25, 40, 26.67);
     }
 
     // Suntik Font Cursive ke dalam VFS jsPDF jika berjaya
@@ -382,7 +382,7 @@ async function createPDFDocument() {
     }
 
     // 3. Logik Tajuk Sijil
-    const sijilTitle = isExempt ? "SIJIL PENGHARGAAN" : "SIJIL PENYERTAAN";
+    const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
 
     // 4. Tetapkan font Cursive dan warna Merah
     if (fontB64) {
@@ -394,7 +394,7 @@ async function createPDFDocument() {
     }
     
     doc.setTextColor(220, 38, 38); // Merah eksklusif
-    doc.text(sijilTitle, centerX, 95, { align: 'center' });
+    doc.text(sijilTitle, centerX, 85, { align: 'center' });
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
@@ -428,10 +428,10 @@ async function createPDFDocument() {
 
     let tarikhGabung = tarikhTerpilih.join(', ');
     doc.setFontSize(12);
-    doc.text(`pada ${tarikhGabung}`, centerX, 205, { align: 'center' });
+    doc.text(`pada ${tarikhGabung}`, centerX, 205, { align: 'center', maxWidth: 170 });
 
     if (signData) {
-        doc.addImage(signData, 'PNG', centerX - 25, 235, 50, 20);
+        doc.addImage(signData, 'PNG', centerX - 35, 230, 70, 28);
     }
 
     // 5. Gugurkan perkataan jawatan di bawah tandatangan
