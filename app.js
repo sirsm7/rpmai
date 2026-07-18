@@ -293,7 +293,10 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
         return;
     }
     
-    if (peranan === 'GURU') {
+    // LOGIK BAHARU: Jika BUKAN PEGAWAI dan BUKAN JURULATIH, wajib GPS
+    const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
+    
+    if (!isExempt) {
         if (!navigator.geolocation) {
             showToast("Sistem GPS tidak disokong oleh pelayar anda.", "error");
             return;
@@ -527,8 +530,10 @@ async function createPDFDocument() {
 
 // Butang Jana & Muat Turun
 async function generateCertificate() {
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Semakan rekod sesi untuk GURU */
-    if (currentRecord.peranan === 'GURU') {
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Semakan rekod sesi berdasar pengecualian peranan */
+    const isExempt = currentRecord.peranan === 'PEGAWAI' || currentRecord.peranan === 'JURULATIH';
+    
+    if (!isExempt) {
         const isSesi1Hadir = currentRecord.sesi_1_hadir === true;
         const isSesi2Hadir = currentRecord.sesi_2_hadir === true;
         
