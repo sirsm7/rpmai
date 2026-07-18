@@ -11,10 +11,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
-    <!-- [COMMENT SYNTAX] SURGICAL EDIT START: Tambah CDN jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- [COMMENT SYNTAX] SURGICAL EDIT END -->
-
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -128,7 +124,6 @@
                         <!-- Sesi dijana secara dinamik melalui JavaScript -->
                     </div>
                     
-                    <!-- [COMMENT SYNTAX] SURGICAL EDIT START: Tambah UI Sijil dengan Butang Pratonton -->
                     <div id="sijil_container" class="mt-6 p-4 border rounded-lg bg-green-50 shadow-sm text-center hidden-view">
                         <h4 class="font-bold text-green-800 mb-2">E-Sijil Penyertaan</h4>
                         <p class="text-sm text-green-700 mb-4">Sijil anda telah sedia.</p>
@@ -141,14 +136,7 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-2">
-                            <button id="btn_preview_sijil" type="button" class="w-full sm:flex-1 px-4 py-2.5 rounded-lg font-medium bg-blue-100 hover:bg-blue-200 text-blue-700 transition-colors shadow-sm flex items-center justify-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                </svg>
-                                Pratonton
-                            </button>
-                            <button id="btn_jana_sijil" type="button" class="w-full sm:flex-1 px-4 py-2.5 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm flex items-center justify-center gap-2">
+                            <button id="btn_jana_sijil" type="button" class="w-full px-4 py-2.5 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm flex items-center justify-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -156,7 +144,6 @@
                             </button>
                         </div>
                     </div>
-                    <!-- [COMMENT SYNTAX] SURGICAL EDIT END -->
 
                     <div class="mt-6 p-4 border rounded-lg bg-slate-50 shadow-sm text-center">
                         <h4 class="font-bold text-gray-800 mb-2">Penilaian Bengkel (BPG)</h4>
@@ -178,22 +165,6 @@
     <div id="admin-link-container" class="mt-6 text-center">
         <a href="admin.html" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">Ke Log Masuk Admin &rarr;</a>
     </div>
-
-    <!-- [COMMENT SYNTAX] SURGICAL EDIT START: Tambah Modal Pratonton -->
-    <div id="preview_modal" class="fixed inset-0 z-[100] hidden flex-col items-center justify-center bg-black bg-opacity-75 p-4 transition-opacity">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden relative">
-            <div class="flex justify-between items-center p-4 border-b bg-gray-50">
-                <h3 class="font-bold text-lg text-gray-800">Pratonton E-Sijil</h3>
-                <button id="btn_close_preview" class="text-gray-500 hover:text-red-500 bg-gray-200 rounded-full p-1 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            <div class="flex-1 bg-gray-200 p-2 w-full h-full relative">
-                <iframe id="preview_iframe" class="w-full h-full border-0 rounded bg-white shadow-inner"></iframe>
-            </div>
-        </div>
-    </div>
-    <!-- [COMMENT SYNTAX] SURGICAL EDIT END -->
 
     <script src="app.js"></script>
 </body>

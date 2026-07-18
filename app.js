@@ -298,7 +298,7 @@ async function markAttendance(sesi) {
     }
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil tab & Font Besar V3 */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Buang logik pratonton sijil */
 function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -475,39 +475,9 @@ async function generateCertificate() {
     }
 }
 
-// Butang Pratonton - Guna Tab Baru
-async function previewCertificate() {
-    const btn = document.getElementById('btn_preview_sijil');
-    if(!btn) return;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-blue-700 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memuatkan...`;
-    btn.disabled = true;
-
-    try {
-        const doc = await createPDFDocument();
-        const blobUrl = doc.output('bloburl');
-        
-        window.open(blobUrl, '_blank');
-        
-    } catch (err) {
-        console.error("Ralat pratonton:", err);
-        if (err.message === "NO_DATE_SELECTED") {
-            showToast("Sila pilih sekurang-kurangnya satu tarikh.", "error");
-        } else {
-            showToast("Gagal membuka sijil. Sila pastikan pop-up dibenarkan.", "error");
-        }
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-}
-
 const btnJana = document.getElementById('btn_jana_sijil');
-const btnPreview = document.getElementById('btn_preview_sijil');
 
 if(btnJana) btnJana.addEventListener('click', generateCertificate);
-if(btnPreview) btnPreview.addEventListener('click', previewCertificate);
-
 /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function setupDashboard() {
