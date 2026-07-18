@@ -387,10 +387,10 @@ async function createPDFDocument() {
     // 4. Tetapkan font Cursive dan warna Merah (Dibesarkan lagi 20%)
     if (fontB64) {
         doc.setFont("Cursive", "normal");
-        doc.setFontSize(60); // (Dari V2 48 -> 60)
+        doc.setFontSize(80); // (Dari V2 48 -> 80)
     } else {
         doc.setFont("helvetica", "bolditalic");
-        doc.setFontSize(40); // (Dari V2 32 -> 40)
+        doc.setFontSize(42); // (Dari V2 32 -> 42)
     }
     
     doc.setTextColor(220, 38, 38); // Merah eksklusif
