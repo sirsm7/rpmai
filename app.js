@@ -298,7 +298,7 @@ async function markAttendance(sesi) {
     }
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil tab & Font Besar */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil tab & Font Besar V3 */
 function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -370,9 +370,9 @@ async function createPDFDocument() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const centerX = pageWidth / 2;
 
-    // 2. Logo dibesarkan 10% (Asal w:40 h:26.67 -> Baru w:44 h:29.33)
+    // 2. Logo dibesarkan lagi 15% (Dari V2 w:44 h:29.33 -> Baru w:50.6 h:33.73)
     if (logoData) {
-        doc.addImage(logoData, 'PNG', centerX - 22, 22, 44, 29.33);
+        doc.addImage(logoData, 'PNG', centerX - 25.3, 20, 50.6, 33.73);
     }
 
     // Suntik Font Cursive ke dalam VFS jsPDF jika berjaya
@@ -384,58 +384,66 @@ async function createPDFDocument() {
     // 3. Logik Tajuk Sijil
     const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
 
-    // 4. Tetapkan font Cursive dan warna Merah (Dibesarkan 15%)
+    // 4. Tetapkan font Cursive dan warna Merah (Dibesarkan lagi 20%)
     if (fontB64) {
         doc.setFont("Cursive", "normal");
-        doc.setFontSize(48); // (Asal 42 -> 48.3)
+        doc.setFontSize(57.6); // (Dari V2 48 -> 57.6)
     } else {
         doc.setFont("helvetica", "bolditalic");
-        doc.setFontSize(32); // (Asal 28 -> 32.2)
+        doc.setFontSize(38.4); // (Dari V2 32 -> 38.4)
     }
     
     doc.setTextColor(220, 38, 38); // Merah eksklusif
-    doc.text(sijilTitle, centerX, 85, { align: 'center' });
+    doc.text(sijilTitle, centerX, 90, { align: 'center' }); // Turun sikit sbb font & logo besar
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    doc.text("Dengan ini disahkan bahawa", centerX, 110, { align: 'center' });
+    doc.text("Dengan ini disahkan bahawa", centerX, 115, { align: 'center' });
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.setTextColor(17, 24, 39);
-    doc.text(currentRecord.nama_penuh, centerX, 125, { align: 'center' });
+    doc.text(currentRecord.nama_penuh, centerX, 130, { align: 'center' });
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
-    doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 135, { align: 'center' });
+    doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 140, { align: 'center' });
 
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    doc.text("telah menyertai", centerX, 150, { align: 'center' });
+    doc.text("telah menyertai", centerX, 155, { align: 'center' });
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.setTextColor(30, 64, 175);
-    doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 165, { align: 'center' });
-    doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 173, { align: 'center' });
+    doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
+    doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
 
-    // 5. Hanya tulis sebagai PESERTA
+    // 5. Peranan: JURULATIH/PEGAWAI kekal, GURU jadi PESERTA
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    doc.text("sebagai PESERTA", centerX, 188, { align: 'center' });
+    
+    let paparanPeranan = "";
+    if (peranan === 'GURU') {
+        paparanPeranan = "sebagai PESERTA";
+    } else {
+        paparanPeranan = `sebagai ${peranan}`;
+    }
+    
+    doc.text(paparanPeranan, centerX, 193, { align: 'center' });
 
     // 6. Tarikh letak bawah perkataan "pada"
     doc.setFontSize(12);
-    doc.text("pada", centerX, 200, { align: 'center' });
+    doc.text("pada", centerX, 205, { align: 'center' });
     
     let tarikhGabung = tarikhTerpilih.join(', ');
-    doc.text(tarikhGabung, centerX, 208, { align: 'center', maxWidth: 170 });
+    doc.text(tarikhGabung, centerX, 213, { align: 'center', maxWidth: 170 });
 
-    // 7. Tandatangan dibesarkan 20% (Asal w:70 h:28 -> Baru w:84 h:33.6)
+    // 7. Tandatangan dibesarkan lagi 15% (Dari V2 w:84 h:33.6 -> Baru w:96.6 h:38.64)
     if (signData) {
-        doc.addImage(signData, 'PNG', centerX - 42, 230, 84, 33.6);
+        doc.addImage(signData, 'PNG', centerX - 48.3, 230, 96.6, 38.64);
     }
 
     return doc;
