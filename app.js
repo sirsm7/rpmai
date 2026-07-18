@@ -298,7 +298,7 @@ async function markAttendance(sesi) {
     }
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil dengan font CDN */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjanaan e-sijil tab & Font Besar */
 function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -370,9 +370,9 @@ async function createPDFDocument() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const centerX = pageWidth / 2;
 
-    // 2. Logo dilebarkan sedikit (Width: 40)
+    // 2. Logo dibesarkan 10% (Asal w:40 h:26.67 -> Baru w:44 h:29.33)
     if (logoData) {
-        doc.addImage(logoData, 'PNG', centerX - 20, 25, 40, 26.67);
+        doc.addImage(logoData, 'PNG', centerX - 22, 22, 44, 29.33);
     }
 
     // Suntik Font Cursive ke dalam VFS jsPDF jika berjaya
@@ -384,13 +384,13 @@ async function createPDFDocument() {
     // 3. Logik Tajuk Sijil
     const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
 
-    // 4. Tetapkan font Cursive dan warna Merah
+    // 4. Tetapkan font Cursive dan warna Merah (Dibesarkan 15%)
     if (fontB64) {
         doc.setFont("Cursive", "normal");
-        doc.setFontSize(42);
+        doc.setFontSize(48); // (Asal 42 -> 48.3)
     } else {
         doc.setFont("helvetica", "bolditalic");
-        doc.setFontSize(28);
+        doc.setFontSize(32); // (Asal 28 -> 32.2)
     }
     
     doc.setTextColor(220, 38, 38); // Merah eksklusif
@@ -399,43 +399,45 @@ async function createPDFDocument() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    doc.text("Dengan ini disahkan bahawa", centerX, 115, { align: 'center' });
+    doc.text("Dengan ini disahkan bahawa", centerX, 110, { align: 'center' });
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.setTextColor(17, 24, 39);
-    doc.text(currentRecord.nama_penuh, centerX, 130, { align: 'center' });
+    doc.text(currentRecord.nama_penuh, centerX, 125, { align: 'center' });
     
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
-    doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 140, { align: 'center' });
+    doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 135, { align: 'center' });
 
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    doc.text("telah menyertai", centerX, 155, { align: 'center' });
+    doc.text("telah menyertai", centerX, 150, { align: 'center' });
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.setTextColor(30, 64, 175);
-    doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
-    doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
+    doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 165, { align: 'center' });
+    doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 173, { align: 'center' });
 
+    // 5. Hanya tulis sebagai PESERTA
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    const perananTeks = peranan === 'GURU' ? `sebagai ${peranan} (${currentRecord.subjek})` : `sebagai ${peranan}`;
-    doc.text(perananTeks, centerX, 195, { align: 'center' });
+    doc.text("sebagai PESERTA", centerX, 188, { align: 'center' });
 
-    let tarikhGabung = tarikhTerpilih.join(', ');
+    // 6. Tarikh letak bawah perkataan "pada"
     doc.setFontSize(12);
-    doc.text(`pada ${tarikhGabung}`, centerX, 205, { align: 'center', maxWidth: 170 });
+    doc.text("pada", centerX, 200, { align: 'center' });
+    
+    let tarikhGabung = tarikhTerpilih.join(', ');
+    doc.text(tarikhGabung, centerX, 208, { align: 'center', maxWidth: 170 });
 
+    // 7. Tandatangan dibesarkan 20% (Asal w:70 h:28 -> Baru w:84 h:33.6)
     if (signData) {
-        doc.addImage(signData, 'PNG', centerX - 35, 230, 70, 28);
+        doc.addImage(signData, 'PNG', centerX - 42, 230, 84, 33.6);
     }
 
-    // 5. Gugurkan perkataan jawatan di bawah tandatangan
-    
     return doc;
 }
 
@@ -465,7 +467,7 @@ async function generateCertificate() {
     }
 }
 
-// Butang Pratonton
+// Butang Pratonton - Guna Tab Baru
 async function previewCertificate() {
     const btn = document.getElementById('btn_preview_sijil');
     if(!btn) return;
@@ -477,19 +479,14 @@ async function previewCertificate() {
         const doc = await createPDFDocument();
         const blobUrl = doc.output('bloburl');
         
-        const modal = document.getElementById('preview_modal');
-        const iframe = document.getElementById('preview_iframe');
-        
-        iframe.src = blobUrl;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        window.open(blobUrl, '_blank');
         
     } catch (err) {
         console.error("Ralat pratonton:", err);
         if (err.message === "NO_DATE_SELECTED") {
             showToast("Sila pilih sekurang-kurangnya satu tarikh.", "error");
         } else {
-            showToast("Gagal menjana pratonton.", "error");
+            showToast("Gagal membuka sijil. Sila pastikan pop-up dibenarkan.", "error");
         }
     } finally {
         btn.innerHTML = originalText;
@@ -499,20 +496,10 @@ async function previewCertificate() {
 
 const btnJana = document.getElementById('btn_jana_sijil');
 const btnPreview = document.getElementById('btn_preview_sijil');
-const btnClosePreview = document.getElementById('btn_close_preview');
 
 if(btnJana) btnJana.addEventListener('click', generateCertificate);
 if(btnPreview) btnPreview.addEventListener('click', previewCertificate);
 
-if(btnClosePreview) {
-    btnClosePreview.addEventListener('click', () => {
-        const modal = document.getElementById('preview_modal');
-        const iframe = document.getElementById('preview_iframe');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        iframe.src = '';
-    });
-}
 /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function setupDashboard() {
