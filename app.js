@@ -349,7 +349,7 @@ async function generateCertificate() {
             format: 'a4'
         });
 
-        const logoData = await getBase64Image('ikonppdag.png');
+        const logoData = await getBase64Image('ikonppd.png');
         const signData = await getBase64Image('tttnhj.png');
 
         const pageWidth = doc.internal.pageSize.getWidth();
