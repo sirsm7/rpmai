@@ -204,8 +204,12 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang pukal semasa log keluar */
     const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
     const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+    const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
+    const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
     if(btnPukal1) btnPukal1.classList.add('hidden-view');
     if(btnPukal2) btnPukal2.classList.add('hidden-view');
+    if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
+    if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
     /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     currentData = [];
@@ -321,8 +325,12 @@ async function fetchTableData() {
             /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang pukal jika tiada rekod */
             const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
             const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+            const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
+            const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
             if(btnPukal1) btnPukal1.classList.add('hidden-view');
             if(btnPukal2) btnPukal2.classList.add('hidden-view');
+            if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
+            if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
             /* [COMMENT SYNTAX] SURGICAL EDIT END */
             
             return;
@@ -337,8 +345,12 @@ async function fetchTableData() {
         /* [COMMENT SYNTAX] SURGICAL EDIT START: Tunjuk butang pukal jika ada rekod */
         const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
         const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+        const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
+        const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
         if (btnPukal1) btnPukal1.classList.remove('hidden-view');
         if (btnPukal2) btnPukal2.classList.remove('hidden-view');
+        if (btnPukalTakHadir1) btnPukalTakHadir1.classList.remove('hidden-view');
+        if (btnPukalTakHadir2) btnPukalTakHadir2.classList.remove('hidden-view');
         /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     } catch (err) {
@@ -474,8 +486,8 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
     }
 };
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Tambah fungsi kehadiran pukal tanpa modal pengesahan lalai sistem */
-async function markBulkAttendance(sesi) {
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Tambah fungsi kehadiran pukal dengan sokongan status boolean (hadir/tidak hadir) */
+async function markBulkAttendance(sesi, isHadir) {
     if (currentData.length === 0) return;
 
     let dataToUpdate = currentData.filter(row => !row.isDummy);
@@ -491,7 +503,7 @@ async function markBulkAttendance(sesi) {
     const selGroup = document.getElementById('filter_subjek').value;
     const conf = groupConfig[selGroup];
 
-    const btnId = `btn-pukal-hadir-${sesi}`;
+    const btnId = isHadir ? `btn-pukal-hadir-${sesi}` : `btn-pukal-tak-hadir-${sesi}`;
     const originalBtnText = document.getElementById(btnId).textContent;
     document.getElementById(btnId).textContent = "Memproses...";
     document.getElementById(btnId).disabled = true;
@@ -508,7 +520,7 @@ async function markBulkAttendance(sesi) {
         }
 
         const updateData = {};
-        updateData[updateColumn] = true;
+        updateData[updateColumn] = isHadir;
 
         const { error } = await supabaseClient
             .from('edaftar_bengkel_ppdag')
@@ -520,12 +532,13 @@ async function markBulkAttendance(sesi) {
             throw error;
         }
         
-        row[updateColumn] = true;
+        row[updateColumn] = isHadir;
     });
 
     try {
         await Promise.all(updatePromises);
-        showMsg("Berjaya", `Kehadiran Sesi ${sesi} telah dikemaskini bagi ${dataToUpdate.length} peserta.`);
+        const statusText = isHadir ? "Hadir" : "Tidak Hadir";
+        showMsg("Berjaya", `Status ${statusText} Sesi ${sesi} telah dikemaskini bagi ${dataToUpdate.length} peserta.`);
         renderTable(currentFilter);
     } catch (err) {
         console.error("Ralat kemaskini pukal:", err);
@@ -540,12 +553,20 @@ async function markBulkAttendance(sesi) {
 document.addEventListener('DOMContentLoaded', () => {
     const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
     const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+    const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
+    const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
 
     if (btnPukal1) {
-        btnPukal1.addEventListener('click', () => markBulkAttendance(1));
+        btnPukal1.addEventListener('click', () => markBulkAttendance(1, true));
     }
     if (btnPukal2) {
-        btnPukal2.addEventListener('click', () => markBulkAttendance(2));
+        btnPukal2.addEventListener('click', () => markBulkAttendance(2, true));
+    }
+    if (btnPukalTakHadir1) {
+        btnPukalTakHadir1.addEventListener('click', () => markBulkAttendance(1, false));
+    }
+    if (btnPukalTakHadir2) {
+        btnPukalTakHadir2.addEventListener('click', () => markBulkAttendance(2, false));
     }
 });
 /* [COMMENT SYNTAX] SURGICAL EDIT END */
