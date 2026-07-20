@@ -201,6 +201,13 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     if(btnReset) btnReset.classList.add('hidden-view');
     /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang pukal semasa log keluar */
+    const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
+    const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+    if(btnPukal1) btnPukal1.classList.add('hidden-view');
+    if(btnPukal2) btnPukal2.classList.add('hidden-view');
+    /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
     currentData = [];
     currentFilter = null; // Reset filter state on logout
 });
@@ -310,6 +317,13 @@ async function fetchTableData() {
             
             const btnSemak = document.getElementById('btn-semak-sekolah');
             if(btnSemak) btnSemak.classList.add('hidden-view');
+
+            /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang pukal jika tiada rekod */
+            const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
+            const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+            if(btnPukal1) btnPukal1.classList.add('hidden-view');
+            if(btnPukal2) btnPukal2.classList.add('hidden-view');
+            /* [COMMENT SYNTAX] SURGICAL EDIT END */
             
             return;
         }
@@ -319,6 +333,13 @@ async function fetchTableData() {
         
         const btnSemak = document.getElementById('btn-semak-sekolah');
         if(btnSemak) btnSemak.classList.remove('hidden-view');
+
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Tunjuk butang pukal jika ada rekod */
+        const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
+        const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+        if (btnPukal1) btnPukal1.classList.remove('hidden-view');
+        if (btnPukal2) btnPukal2.classList.remove('hidden-view');
+        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     } catch (err) {
         console.error("Ralat:", err);
@@ -452,6 +473,82 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
         showMsg("Ralat", "Gagal mengemaskini kehadiran.");
     }
 };
+
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Tambah fungsi kehadiran pukal tanpa modal pengesahan lalai sistem */
+async function markBulkAttendance(sesi) {
+    if (currentData.length === 0) return;
+
+    let dataToUpdate = currentData.filter(row => !row.isDummy);
+    if (currentFilter) {
+        dataToUpdate = dataToUpdate.filter(row => row.peranan === currentFilter || row.roleLabel === currentFilter);
+    }
+
+    if (dataToUpdate.length === 0) {
+        showMsg("Makluman", "Tiada rekod untuk dikemaskini.");
+        return;
+    }
+
+    const selGroup = document.getElementById('filter_subjek').value;
+    const conf = groupConfig[selGroup];
+
+    const btnId = `btn-pukal-hadir-${sesi}`;
+    const originalBtnText = document.getElementById(btnId).textContent;
+    document.getElementById(btnId).textContent = "Memproses...";
+    document.getElementById(btnId).disabled = true;
+
+    const updatePromises = dataToUpdate.map(async (row) => {
+        const role = row.peranan || 'GURU';
+        const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
+        
+        let updateColumn = '';
+        if (sesi === 1) {
+            updateColumn = isExempt ? `sesi_${conf.exemptS1}_hadir` : 'sesi_1_hadir';
+        } else {
+            updateColumn = isExempt ? `sesi_${conf.exemptS2}_hadir` : 'sesi_2_hadir';
+        }
+
+        const updateData = {};
+        updateData[updateColumn] = true;
+
+        const { error } = await supabaseClient
+            .from('edaftar_bengkel_ppdag')
+            .update(updateData)
+            .eq('id', row.id);
+
+        if (error) {
+            console.error(`Gagal kemaskini ID ${row.id}:`, error);
+            throw error;
+        }
+        
+        row[updateColumn] = true;
+    });
+
+    try {
+        await Promise.all(updatePromises);
+        showMsg("Berjaya", `Kehadiran Sesi ${sesi} telah dikemaskini bagi ${dataToUpdate.length} peserta.`);
+        renderTable(currentFilter);
+    } catch (err) {
+        console.error("Ralat kemaskini pukal:", err);
+        showMsg("Ralat", "Terdapat ralat semasa mengemaskini sebahagian rekod.");
+        renderTable(currentFilter);
+    } finally {
+        document.getElementById(btnId).textContent = originalBtnText;
+        document.getElementById(btnId).disabled = false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
+    const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
+
+    if (btnPukal1) {
+        btnPukal1.addEventListener('click', () => markBulkAttendance(1));
+    }
+    if (btnPukal2) {
+        btnPukal2.addEventListener('click', () => markBulkAttendance(2));
+    }
+});
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 window.openDelete = function(id) {
     deletingId = id;
