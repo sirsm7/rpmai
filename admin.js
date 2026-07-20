@@ -12,6 +12,10 @@ let tomSelectInstance = null;
 let editingId = null;
 let deletingId = null;
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Tambah variabel state untuk filter */
+let currentFilter = null;
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
+
 const groupConfig = {
     "G1": { label: "MATEMATIK (SR)", subjects: ["MATEMATIK (SR)"], d1: "20 Julai 2026", d2: "21 Julai 2026", exemptS1: 1, exemptS2: 2 },
     "G2": { label: "SAINS (SR)", subjects: ["SAINS (SR)"], d1: "22 Julai 2026", d2: "23 Julai 2026", exemptS1: 3, exemptS2: 4 },
@@ -197,6 +201,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     currentData = [];
+    currentFilter = null; // Reset filter state on logout
 });
 
 async function loadSchools() {
@@ -304,7 +309,9 @@ async function fetchTableData() {
             return;
         }
 
-        renderTable();
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Render jadual dengan filter semasa yang disimpan */
+        renderTable(currentFilter);
+        /* [COMMENT SYNTAX] SURGICAL EDIT END */
         btnPdf.disabled = false;
         
         /* [COMMENT SYNTAX] SURGICAL EDIT START: Papar butang semak sekolah selepas jadual dimuatkan */
@@ -320,9 +327,10 @@ async function fetchTableData() {
 
 document.getElementById('btn-cari').addEventListener('click', fetchTableData);
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi Tapis & Render Jadual */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi Tapis & Render Jadual - Simpan state filter */
 window.tapisSenarai = function(peranan) {
     if (currentData.length === 0) return;
+    currentFilter = peranan; // Simpan state filter
     renderTable(peranan);
 };
 
@@ -417,10 +425,12 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
         if(record) {
             record[`sesi_${sesi}_hadir`] = newStatus;
             
+            /* [COMMENT SYNTAX] SURGICAL EDIT START: Render dengan state filter semasa */
             // Re-render whole table to keep current filter
             // Assuming default render logic re-applies any existing UI state (which it doesn't currently store)
             // A simple re-render of everything is safest for now without adding state vars
-            renderTable(); 
+            renderTable(currentFilter); 
+            /* [COMMENT SYNTAX] SURGICAL EDIT END */
         }
     } catch (err) {
         console.error(err);
@@ -613,6 +623,7 @@ function getLogoBase64() {
     });
 }
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik janaan PDF berdasarkan filter dan kehadiran penuh */
 document.getElementById('btn-pdf').addEventListener('click', async () => {
     if(currentData.length === 0) return;
 
@@ -623,6 +634,32 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
     const selGroup = document.getElementById('filter_subjek').value;
     const conf = groupConfig[selGroup];
+
+    // Filter by current role view if active
+    let dataToExport = currentData;
+    if (currentFilter) {
+        dataToExport = currentData.filter(row => row.peranan === currentFilter || row.roleLabel === currentFilter);
+    }
+    
+    // Filter only those who attended BOTH sessions for their respective group
+    const fullyAttendedData = dataToExport.filter(row => {
+        if(row.isDummy) return false;
+        
+        const role = row.peranan || 'GURU';
+        const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
+
+        const hadir1 = isExempt ? row[`sesi_${conf.exemptS1}_hadir`] : row.sesi_1_hadir;
+        const hadir2 = isExempt ? row[`sesi_${conf.exemptS2}_hadir`] : row.sesi_2_hadir;
+        
+        return hadir1 && hadir2;
+    });
+
+    if (fullyAttendedData.length === 0) {
+        showMsg("Tiada Rekod", `Tiada peserta${currentFilter ? ` bagi kategori ${currentFilter}` : ''} yang melengkapkan kedua-dua sesi kehadiran.`);
+        btnPdf.textContent = originalText;
+        btnPdf.disabled = false;
+        return;
+    }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape');
@@ -639,35 +676,27 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
-        doc.text(`Kumpulan: ${conf.label}`, 48, 25);
+        let titleSuffix = currentFilter ? ` (${currentFilter}) - HADIR PENUH` : ` - HADIR PENUH`;
+        doc.text(`Kumpulan: ${conf.label}${titleSuffix}`, 48, 25);
     } else {
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 14, 18);
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
-        doc.text(`Kumpulan: ${conf.label}`, 14, 25);
+        let titleSuffix = currentFilter ? ` (${currentFilter}) - HADIR PENUH` : ` - HADIR PENUH`;
+        doc.text(`Kumpulan: ${conf.label}${titleSuffix}`, 14, 25);
     }
 
-    const tableData = currentData.map((row, i) => {
-        if(row.isDummy) {
-            return [
-                i + 1,
-                "",
-                "",
-                "",
-                "",
-                ""
-            ];
-        }
+    const tableData = fullyAttendedData.map((row, i) => {
         const role = row.peranan || 'GURU';
         return [
             i + 1,
             `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`,
             row.ic_no,
             `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
-            "",
-            ""
+            "HADIR",
+            "HADIR"
         ];
     });
 
@@ -690,19 +719,16 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
             1: { cellWidth: 70 },
             2: { cellWidth: 35, halign: 'center' },
             3: { cellWidth: 70 },
-            4: { cellWidth: 40 },
-            5: { cellWidth: 40 }
-        },
-        didDrawCell: function(data) {
-            if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
-                // Ruang tandatangan
-            }
+            4: { cellWidth: 40, halign: 'center' },
+            5: { cellWidth: 40, halign: 'center' }
         }
     });
 
+    const roleSuffix = currentFilter ? `_${currentFilter}` : '';
     const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`Kehadiran_${safeFileName}.pdf`);
+    doc.save(`Kehadiran_Penuh_${safeFileName}${roleSuffix}.pdf`);
 
     btnPdf.textContent = originalText;
     btnPdf.disabled = false;
 });
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
