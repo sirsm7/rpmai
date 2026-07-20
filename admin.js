@@ -228,13 +228,18 @@ function renderTable() {
         const hadir1 = isExempt ? row[`sesi_${conf.exemptS1}_hadir`] : row.sesi_1_hadir;
         const hadir2 = isExempt ? row[`sesi_${conf.exemptS2}_hadir`] : row.sesi_2_hadir;
 
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Butang sahkan kehadiran dinamik */
+        const sesi1Key = isExempt ? conf.exemptS1 : 1;
+        const sesi2Key = isExempt ? conf.exemptS2 : 2;
+
         const badge1 = hadir1 
-            ? '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
-            : '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+            ? `<button onclick="toggleAttendance('${row.id}', ${sesi1Key}, true)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 hover:bg-green-200 text-green-800 transition-colors border border-green-200 cursor-pointer" title="Batal Hadir">Hadir</button>`
+            : `<button onclick="toggleAttendance('${row.id}', ${sesi1Key}, false)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 hover:bg-red-200 text-red-800 transition-colors border border-red-200 cursor-pointer" title="Sahkan Hadir">Tidak</button>`;
         
         const badge2 = hadir2 
-            ? '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 text-green-800">Hadir</span>'
-            : '<span class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 text-red-800">Tidak</span>';
+            ? `<button onclick="toggleAttendance('${row.id}', ${sesi2Key}, true)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 hover:bg-green-200 text-green-800 transition-colors border border-green-200 cursor-pointer" title="Batal Hadir">Hadir</button>`
+            : `<button onclick="toggleAttendance('${row.id}', ${sesi2Key}, false)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 hover:bg-red-200 text-red-800 transition-colors border border-red-200 cursor-pointer" title="Sahkan Hadir">Tidak</button>`;
+        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         html += `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -262,6 +267,32 @@ function renderTable() {
     });
     tbody.innerHTML = html;
 }
+
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi toggleAttendance */
+window.toggleAttendance = async function(id, sesi, currentStatus) {
+    const newStatus = !currentStatus;
+    try {
+        const updateData = {};
+        updateData[`sesi_${sesi}_hadir`] = newStatus;
+
+        const { error } = await supabaseClient
+            .from('edaftar_bengkel_ppdag')
+            .update(updateData)
+            .eq('id', id);
+
+        if(error) throw error;
+
+        const record = currentData.find(r => r.id === id);
+        if(record) {
+            record[`sesi_${sesi}_hadir`] = newStatus;
+            renderTable();
+        }
+    } catch (err) {
+        console.error(err);
+        showMsg("Ralat", "Gagal mengemaskini kehadiran.");
+    }
+};
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 window.openDelete = function(id) {
     deletingId = id;
