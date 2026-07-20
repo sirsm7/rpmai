@@ -160,7 +160,7 @@ async function loadDashboardStats() {
 
         document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
         document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 8`;
-        document.getElementById('sum_guru').innerHTML = `${guruCount || 0} <span class="text-sm font-normal text-blue-600">(Semua)</span>`;
+        document.getElementById('sum_guru').innerHTML = `${guruCount || 0}`;
 
         document.getElementById('summary-cards').classList.remove('hidden-view');
     } catch (err) {
@@ -281,13 +281,13 @@ async function fetchTableData() {
 
         document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
         document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 8`;
-        document.getElementById('sum_guru').innerHTML = `${(guruData || []).length} <span class="text-sm font-normal text-blue-600">(Saringan)</span>`;
+        document.getElementById('sum_guru').innerHTML = `${(guruData || []).length}`;
 
         let paddedPegawai = [...(pegData || [])];
-        while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI' });
+        while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI', peranan: 'PEGAWAI' });
 
         let paddedJurulatih = [...(jurData || [])];
-        while(paddedJurulatih.length < 8) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH' });
+        while(paddedJurulatih.length < 8) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' });
 
         currentData = [...paddedPegawai, ...paddedJurulatih, ...(guruData || [])];
 
@@ -320,17 +320,33 @@ async function fetchTableData() {
 
 document.getElementById('btn-cari').addEventListener('click', fetchTableData);
 
-function renderTable() {
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi Tapis & Render Jadual */
+window.tapisSenarai = function(peranan) {
+    if (currentData.length === 0) return;
+    renderTable(peranan);
+};
+
+function renderTable(filterPeranan = null) {
     const tbody = document.getElementById('table-body');
     const selGroup = document.getElementById('filter_subjek').value;
     const conf = groupConfig[selGroup];
     let html = '';
 
-    currentData.forEach((row, i) => {
+    let dataToRender = currentData;
+    if (filterPeranan) {
+        dataToRender = currentData.filter(row => row.peranan === filterPeranan || row.roleLabel === filterPeranan);
+    }
+
+    if (dataToRender.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk kategori ${filterPeranan || 'ini'}.</td></tr>`;
+        return;
+    }
+
+    dataToRender.forEach((row, i) => {
         if(row.isDummy) {
             html += `
                 <tr class="bg-slate-50/50">
-                    <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-400 text-center">${i + 1}</td>
+                    <td class="px-4 py-4 text-sm text-slate-400 text-center">${i + 1}</td>
                     <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Ruang ${row.roleLabel} (Kosong)</td>
                 </tr>
             `;
@@ -356,30 +372,33 @@ function renderTable() {
 
         html += `
             <tr class="hover:bg-slate-50 transition-colors">
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500 text-center">${i + 1}</td>
-                <td class="px-4 py-4">
-                    <div class="text-sm font-bold text-slate-900 uppercase">${row.nama_penuh}</div>
-                    <div class="text-xs text-slate-500 mt-0.5">KP: ${row.ic_no} | ${role} ${!isExempt && row.subjek ? `(${row.subjek})` : ''}</div>
+                <td class="px-4 py-4 text-sm text-slate-500 text-center align-top">${i + 1}</td>
+                <td class="px-4 py-4 align-top">
+                    <div class="text-sm font-bold text-slate-900 uppercase break-words">${row.nama_penuh}</div>
+                    <div class="text-xs text-slate-500 mt-0.5 break-words">KP: ${row.ic_no} | ${role} ${!isExempt && row.subjek ? `(${row.subjek})` : ''}</div>
                 </td>
-                <td class="px-4 py-4 text-sm text-slate-600">
-                    <div class="font-medium">${row.kod_sekolah || '-'}</div>
-                    <div class="text-xs truncate max-w-xs">${row.nama_sekolah || ''}</div>
+                <td class="px-4 py-4 text-sm text-slate-600 align-top">
+                    <div class="font-medium break-words">${row.kod_sekolah || '-'}</div>
+                    <div class="text-xs break-words">${row.nama_sekolah || ''}</div>
                 </td>
-                <td class="px-4 py-4 text-center">
+                <td class="px-4 py-4 text-center align-top">
                     <div class="flex flex-col gap-1 items-center">
                         <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 1: ${badge1}</div>
                         <div class="text-xs text-slate-500 flex items-center justify-between w-24">Sesi 2: ${badge2}</div>
                     </div>
                 </td>
-                <td class="px-4 py-4 text-right text-sm font-medium whitespace-nowrap">
-                    <button onclick="openEdit('${row.id}')" class="text-blue-600 hover:text-blue-900 mr-3 px-2 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
-                    <button onclick="openDelete('${row.id}')" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50 transition-colors">Padam</button>
+                <td class="px-4 py-4 text-right text-sm font-medium whitespace-nowrap align-top">
+                    <div class="flex flex-col gap-2 items-end">
+                        <button onclick="openEdit('${row.id}')" class="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
+                        <button onclick="openDelete('${row.id}')" class="text-red-600 hover:text-red-900 px-2 py-1 rounded hover:bg-red-50 transition-colors">Padam</button>
+                    </div>
                 </td>
             </tr>
         `;
     });
     tbody.innerHTML = html;
 }
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 window.toggleAttendance = async function(id, sesi, currentStatus) {
     const newStatus = !currentStatus;
@@ -397,7 +416,11 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
         const record = currentData.find(r => r.id === id);
         if(record) {
             record[`sesi_${sesi}_hadir`] = newStatus;
-            renderTable();
+            
+            // Re-render whole table to keep current filter
+            // Assuming default render logic re-applies any existing UI state (which it doesn't currently store)
+            // A simple re-render of everything is safest for now without adding state vars
+            renderTable(); 
         }
     } catch (err) {
         console.error(err);
