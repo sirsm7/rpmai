@@ -32,7 +32,6 @@ const subjectDatesMap = {
     "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
 };
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Data Master Sekolah */
 const masterSekolah = [
     { kod: "MBA0001", nama: "SEKOLAH KEBANGSAAN MASJID TANAH", jenis: "SK" },
     { kod: "MBA0002", nama: "SEKOLAH KEBANGSAAN TANJUNG BIDARA", jenis: "SK" },
@@ -134,7 +133,6 @@ const masterSekolah = [
     { kod: "MFT0004", nama: "SEKOLAH MENENGAH IMTIAZ ULUL ALBAB MELAKA", jenis: "SM SABK" },
     { kod: "MHA0001", nama: "KOLEJ VOKASIONAL DATUK SERI MOHD. ZIN", jenis: "KV" }
 ];
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function showMsg(title, body) {
     document.getElementById('msg-title').textContent = title;
@@ -195,9 +193,12 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     document.getElementById('btn-pdf').disabled = true;
     document.getElementById('summary-cards').classList.add('hidden-view');
     
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang semak sekolah semasa log keluar */
     const btnSemak = document.getElementById('btn-semak-sekolah');
     if(btnSemak) btnSemak.classList.add('hidden-view');
+
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang reset semasa log keluar */
+    const btnReset = document.getElementById('btn-reset-filter');
+    if(btnReset) btnReset.classList.add('hidden-view');
     /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     currentData = [];
@@ -245,6 +246,12 @@ async function fetchTableData() {
     const tbody = document.getElementById('table-body');
     const btnPdf = document.getElementById('btn-pdf');
     const summary = document.getElementById('summary-cards');
+
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Reset filter state jika tukar subjek */
+    currentFilter = null;
+    const btnReset = document.getElementById('btn-reset-filter');
+    if(btnReset) btnReset.classList.add('hidden-view');
+    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     if(!selGroup) {
         showMsg("Ralat", "Sila pilih kumpulan subjek.");
@@ -301,23 +308,17 @@ async function fetchTableData() {
         if(currentData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
             
-            /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang semak sekolah jika tiada data */
             const btnSemak = document.getElementById('btn-semak-sekolah');
             if(btnSemak) btnSemak.classList.add('hidden-view');
-            /* [COMMENT SYNTAX] SURGICAL EDIT END */
             
             return;
         }
 
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Render jadual dengan filter semasa yang disimpan */
         renderTable(currentFilter);
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
         btnPdf.disabled = false;
         
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Papar butang semak sekolah selepas jadual dimuatkan */
         const btnSemak = document.getElementById('btn-semak-sekolah');
         if(btnSemak) btnSemak.classList.remove('hidden-view');
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     } catch (err) {
         console.error("Ralat:", err);
@@ -327,12 +328,32 @@ async function fetchTableData() {
 
 document.getElementById('btn-cari').addEventListener('click', fetchTableData);
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi Tapis & Render Jadual - Simpan state filter */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi Tapis & Render Jadual - Simpan state filter dan tambah butang reset */
 window.tapisSenarai = function(peranan) {
     if (currentData.length === 0) return;
     currentFilter = peranan; // Simpan state filter
     renderTable(peranan);
+
+    let btnReset = document.getElementById('btn-reset-filter');
+    if (!btnReset) {
+        btnReset = document.createElement('button');
+        btnReset.id = 'btn-reset-filter';
+        btnReset.className = 'px-4 py-2 bg-slate-500 text-white text-sm font-medium rounded hover:bg-slate-600 transition-colors shadow-sm ml-2';
+        btnReset.textContent = 'Reset Paparan';
+        btnReset.onclick = function() {
+            currentFilter = null;
+            renderTable();
+            this.classList.add('hidden-view');
+        };
+        
+        const btnPdf = document.getElementById('btn-pdf');
+        if (btnPdf && btnPdf.parentNode) {
+            btnPdf.parentNode.insertBefore(btnReset, btnPdf.nextSibling);
+        }
+    }
+    btnReset.classList.remove('hidden-view');
 };
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function renderTable(filterPeranan = null) {
     const tbody = document.getElementById('table-body');
@@ -406,7 +427,6 @@ function renderTable(filterPeranan = null) {
     });
     tbody.innerHTML = html;
 }
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 window.toggleAttendance = async function(id, sesi, currentStatus) {
     const newStatus = !currentStatus;
@@ -425,12 +445,7 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
         if(record) {
             record[`sesi_${sesi}_hadir`] = newStatus;
             
-            /* [COMMENT SYNTAX] SURGICAL EDIT START: Render dengan state filter semasa */
-            // Re-render whole table to keep current filter
-            // Assuming default render logic re-applies any existing UI state (which it doesn't currently store)
-            // A simple re-render of everything is safest for now without adding state vars
             renderTable(currentFilter); 
-            /* [COMMENT SYNTAX] SURGICAL EDIT END */
         }
     } catch (err) {
         console.error(err);
@@ -547,7 +562,6 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     }
 });
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik Buka/Tutup Modal Semak Sekolah */
 window.bukaModalSemakSekolah = function() {
     const selGroup = document.getElementById('filter_subjek').value;
     if (!selGroup) {
@@ -604,7 +618,6 @@ window.bukaModalSemakSekolah = function() {
 window.tutupModalSemakSekolah = function() {
     document.getElementById('modal-sekolah-tiada').classList.add('hidden-view');
 };
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function getLogoBase64() {
     return new Promise((resolve) => {
@@ -623,7 +636,7 @@ function getLogoBase64() {
     });
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik janaan PDF berdasarkan filter dan kehadiran penuh */
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik janaan PDF berdasarkan filter dan kehadiran penuh serta buang teks HADIR */
 document.getElementById('btn-pdf').addEventListener('click', async () => {
     if(currentData.length === 0) return;
 
@@ -724,7 +737,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
         },
         didDrawCell: function(data) {
             if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
-                // Ruang tandatangan dikosongkan
+                // Ruang tandatangan dikosongkan untuk pengesahan kehadiran fizikal
             }
         }
     });
