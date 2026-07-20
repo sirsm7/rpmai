@@ -695,8 +695,8 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
             `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`,
             row.ic_no,
             `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
-            "HADIR",
-            "HADIR"
+            "",
+            ""
         ];
     });
 
@@ -719,8 +719,13 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
             1: { cellWidth: 70 },
             2: { cellWidth: 35, halign: 'center' },
             3: { cellWidth: 70 },
-            4: { cellWidth: 40, halign: 'center' },
-            5: { cellWidth: 40, halign: 'center' }
+            4: { cellWidth: 40 },
+            5: { cellWidth: 40 }
+        },
+        didDrawCell: function(data) {
+            if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
+                // Ruang tandatangan dikosongkan
+            }
         }
     });
 
