@@ -28,6 +28,110 @@ const subjectDatesMap = {
     "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
 };
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Data Master Sekolah */
+const masterSekolah = [
+    { kod: "MBA0001", nama: "SEKOLAH KEBANGSAAN MASJID TANAH", jenis: "SK" },
+    { kod: "MBA0002", nama: "SEKOLAH KEBANGSAAN TANJUNG BIDARA", jenis: "SK" },
+    { kod: "MBA0003", nama: "SEKOLAH KEBANGSAAN OTHMAN SYAWAL", jenis: "SK" },
+    { kod: "MBA0004", nama: "SEKOLAH KEBANGSAAN BUKIT BERINGIN", jenis: "SK" },
+    { kod: "MBA0005", nama: "SEKOLAH KEBANGSAAN RAMUAN CHINA BESAR", jenis: "SK" },
+    { kod: "MBA0006", nama: "SEKOLAH KEBANGSAAN RAMUAN CHINA KECHIL", jenis: "SK" },
+    { kod: "MBA0007", nama: "SEKOLAH KEBANGSAAN AYER LIMAU", jenis: "SK" },
+    { kod: "MBA0008", nama: "SEKOLAH KEBANGSAAN KUALA LINGGI", jenis: "SK" },
+    { kod: "MBA0009", nama: "SEKOLAH KEBANGSAAN PENGKALAN BALAK", jenis: "SK" },
+    { kod: "MBA0010", nama: "SEKOLAH KEBANGSAAN DURIAN DAUN (K)", jenis: "SK" },
+    { kod: "MBA0011", nama: "SEKOLAH KEBANGSAAN LUBOK REDAN", jenis: "SK" },
+    { kod: "MBA0012", nama: "SEKOLAH KEBANGSAAN JERAM", jenis: "SK" },
+    { kod: "MBA0013", nama: "SEKOLAH KEBANGSAAN AIR JERNIH", jenis: "SK" },
+    { kod: "MBA0014", nama: "SEKOLAH KEBANGSAAN KAMPUNG TENGAH", jenis: "SK" },
+    { kod: "MBA0015", nama: "SEKOLAH KEBANGSAAN SUNGAI TUANG", jenis: "SK" },
+    { kod: "MBA0016", nama: "SEKOLAH KEBANGSAAN TELOK BEREMBANG", jenis: "SK" },
+    { kod: "MBA0017", nama: "SEKOLAH KEBANGSAAN SUNGAI JERNIH", jenis: "SK" },
+    { kod: "MBA0018", nama: "SEKOLAH KEBANGSAAN RANTAU PANJANG", jenis: "SK" },
+    { kod: "MBA0020", nama: "SEKOLAH KEBANGSAAN PADANG SEBANG", jenis: "SK" },
+    { kod: "MBA0021", nama: "SEKOLAH KEBANGSAAN AYER PA'ABAS", jenis: "SK" },
+    { kod: "MBA0022", nama: "SEKOLAH KEBANGSAAN SIMPANG EMPAT", jenis: "SK" },
+    { kod: "MBA0023", nama: "SEKOLAH KEBANGSAAN PULAU SEBANG", jenis: "SK" },
+    { kod: "MBA0024", nama: "SEKOLAH KEBANGSAAN MELEKEK", jenis: "SK" },
+    { kod: "MBA0025", nama: "SEKOLAH KEBANGSAAN GANUN", jenis: "SK" },
+    { kod: "MBA0026", nama: "SEKOLAH KEBANGSAAN PARIT MELANA", jenis: "SK" },
+    { kod: "MBA0027", nama: "SEKOLAH KEBANGSAAN SUNGAI PETAI", jenis: "SK" },
+    { kod: "MBA0028", nama: "SEKOLAH KEBANGSAAN SUNGAI SIPUT", jenis: "SK" },
+    { kod: "MBA0029", nama: "SEKOLAH KEBANGSAAN MELAKA PINDAH", jenis: "SK" },
+    { kod: "MBA0030", nama: "SEKOLAH KEBANGSAAN PEGOH", jenis: "SK" },
+    { kod: "MBA0031", nama: "SEKOLAH KEBANGSAAN BERISU", jenis: "SK" },
+    { kod: "MBA0032", nama: "SEKOLAH KEBANGSAAN LENDU", jenis: "SK" },
+    { kod: "MBA0033", nama: "SEKOLAH KEBANGSAAN BELIMBING DALAM", jenis: "SK" },
+    { kod: "MBA0034", nama: "SEKOLAH KEBANGSAAN RUMBIA", jenis: "SK" },
+    { kod: "MBA0035", nama: "SEKOLAH KEBANGSAAN SUNGAI BULOH", jenis: "SK" },
+    { kod: "MBA0036", nama: "SEKOLAH KEBANGSAAN CHERANA PUTEH", jenis: "SK" },
+    { kod: "MBA0037", nama: "SEKOLAH KEBANGSAAN TEBONG", jenis: "SK" },
+    { kod: "MBA0038", nama: "SEKOLAH KEBANGSAAN KEMUNING", jenis: "SK" },
+    { kod: "MBA0039", nama: "SEKOLAH KEBANGSAAN MENGGONG", jenis: "SK" },
+    { kod: "MBA0040", nama: "SEKOLAH KEBANGSAAN HUTAN PERCHA", jenis: "SK" },
+    { kod: "MBA0041", nama: "SEKOLAH KEBANGSAAN DURIAN TUNGGAL", jenis: "SK" },
+    { kod: "MBA0042", nama: "SEKOLAH KEBANGSAAN KEM TERENDAK II", jenis: "SK" },
+    { kod: "MBA0043", nama: "SEKOLAH KEBANGSAAN GANGSA", jenis: "SK" },
+    { kod: "MBA0044", nama: "SEKOLAH KEBANGSAAN LESONG BATU", jenis: "SK" },
+    { kod: "MBA0045", nama: "SEKOLAH KEBANGSAAN DEMANG TAHA", jenis: "SK" },
+    { kod: "MBB0041", nama: "SEKOLAH KEBANGSAAN ALOR GAJAH 1", jenis: "SK" },
+    { kod: "MBB0042", nama: "SEKOLAH KEBANGSAAN DATO' NANING", jenis: "SK" },
+    { kod: "MBB0043", nama: "SEKOLAH KEBANGSAAN DATUK TAMBICHIK KARIM", jenis: "SK" },
+    { kod: "MBB0044", nama: "SEKOLAH KEBANGSAAN SRI LAKSAMANA", jenis: "SK" },
+    { kod: "MBC0046", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) PAY CHEE", jenis: "SJKC" },
+    { kod: "MBC0047", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) ALOR GAJAH", jenis: "SJKC" },
+    { kod: "MBC0048", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) SANN YUH", jenis: "SJKC" },
+    { kod: "MBC0049", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) PENG MIN", jenis: "SJKC" },
+    { kod: "MBC0050", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) SIN WAH", jenis: "SJKC" },
+    { kod: "MBC0051", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) KIOW MIN", jenis: "SJKC" },
+    { kod: "MBC0052", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) MACHAP BARU", jenis: "SJKC" },
+    { kod: "MBC0053", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) MACHAP UMBOO", jenis: "SJKC" },
+    { kod: "MBC0054", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) TABOH NANING", jenis: "SJKC" },
+    { kod: "MBC0055", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) LENDU", jenis: "SJKC" },
+    { kod: "MBC0056", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) KHIAK YEW", jenis: "SJKC" },
+    { kod: "MBC0057", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) MASJID TANAH", jenis: "SJKC" },
+    { kod: "MBC0058", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) YOK SIN", jenis: "SJKC" },
+    { kod: "MBC0059", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) PAYA MENGKUANG", jenis: "SJKC" },
+    { kod: "MBC0060", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) SIN MIN", jenis: "SJKC" },
+    { kod: "MBC0061", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) CHABAU", jenis: "SJKC" },
+    { kod: "MBD0061", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) ALOR GAJAH", jenis: "SJKT" },
+    { kod: "MBD0062", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) DURIAN TUNGGAL", jenis: "SJKT" },
+    { kod: "MBD0063", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) RUMBIA", jenis: "SJKT" },
+    { kod: "MBD0064", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LADANG GADEK", jenis: "SJKT" },
+    { kod: "MBD0066", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) KEMUNING (H/D)", jenis: "SJKT" },
+    { kod: "MBD0067", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LDG KEMUNING KRU DIVISION", jenis: "SJKT" },
+    { kod: "MBD0068", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) PULAU SEBANG", jenis: "SJKT" },
+    { kod: "MBD0069", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LDG SG BARU (H/D)", jenis: "SJKT" },
+    { kod: "MBD0070", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LDG TEBONG", jenis: "SJKT" },
+    { kod: "MBD0097", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) PEKAN TEBONG", jenis: "SJKT" },
+    { kod: "MBE0045", nama: "SEKOLAH KEBANGSAAN KEM TERENDAK 1", jenis: "SK" },
+    { kod: "MCT0001", nama: "SEKOLAH RENDAH ARAB (JAIM) AL-FALAH", jenis: "SR SABK" },
+    { kod: "MCT0002", nama: "SEKOLAH RENDAH ARAB (JAIM) AL-FAIZIN", jenis: "SR SABK" },
+    { kod: "MEA0071", nama: "SEKOLAH MENENGAH KEBANGSAAN GHAFAR BABA", jenis: "SMK" },
+    { kod: "MEA0072", nama: "SEKOLAH MENENGAH KEBANGSAAN DATO' HAJI TALIB KARIM", jenis: "SMK" },
+    { kod: "MEA0073", nama: "SEKOLAH MENENGAH KEBANGSAAN RAHMAT", jenis: "SMK" },
+    { kod: "MEA0074", nama: "SEKOLAH MENENGAH KEBANGSAAN ADE PUTRA", jenis: "SMK" },
+    { kod: "MEA0075", nama: "SEKOLAH MENENGAH KEBANGSAAN NANING", jenis: "SMK" },
+    { kod: "MEA0095", nama: "SEKOLAH MENENGAH KEBANGSAAN LUBOK CHINA", jenis: "SMK" },
+    { kod: "MEA0099", nama: "SEKOLAH MENENGAH KEBANGSAAN HANG KASTURI", jenis: "SMK" },
+    { kod: "MEA0100", nama: "SEKOLAH MENENGAH KEBANGSAAN SUNGAI UDANG", jenis: "SMK" },
+    { kod: "MEA0101", nama: "SEKOLAH MENENGAH KEBANGSAAN DURIAN TUNGGAL", jenis: "SMK" },
+    { kod: "MEA0102", nama: "SEKOLAH MENENGAH KEBANGSAAN TEBONG", jenis: "SMK" },
+    { kod: "MEA0103", nama: "SEKOLAH MENENGAH SAINS DATUK SETIA ABDUL GHANI ALI", jenis: "SBP" },
+    { kod: "MEB0077", nama: "SEKOLAH MENENGAH KEBANGSAAN SERI PENGKALAN", jenis: "SMK" },
+    { kod: "MEB0078", nama: "SEKOLAH MENENGAH KEBANGSAAN PULAU SEBANG", jenis: "SMK" },
+    { kod: "MEB0079", nama: "SEKOLAH MENENGAH KEBANGSAAN SULTAN ALAUDDIN", jenis: "SMK" },
+    { kod: "MEE0074", nama: "SEKOLAH MENENGAH KEBANGSAAN SULTAN MANSOR SHAH", jenis: "SMK" },
+    { kod: "MEE0075", nama: "SEKOLAH MENENGAH KEBANGSAAN DATO' DOL SAID", jenis: "SMK" },
+    { kod: "MEE0094", nama: "SEKOLAH MENENGAH KEBANGSAAN KEM TERENDAK", jenis: "SMK" },
+    { kod: "MFT0001", nama: "SEKOLAH MENENGAH AGAMA AL-EHYA AL-KARIM", jenis: "SM SABK" },
+    { kod: "MFT0002", nama: "SEKOLAH MENENGAH AGAMA (JAIM) AL-ASYRAF", jenis: "SM SABK" },
+    { kod: "MFT0003", nama: "SEKOLAH MENENGAH AGAMA (JAIM) DARUL FALAH", jenis: "SM SABK" },
+    { kod: "MFT0004", nama: "SEKOLAH MENENGAH IMTIAZ ULUL ALBAB MELAKA", jenis: "SM SABK" },
+    { kod: "MHA0001", nama: "KOLEJ VOKASIONAL DATUK SERI MOHD. ZIN", jenis: "KV" }
+];
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
+
 function showMsg(title, body) {
     document.getElementById('msg-title').textContent = title;
     document.getElementById('msg-body').textContent = body;
@@ -37,7 +141,6 @@ function closeMsg() {
     document.getElementById('msg-modal').classList.add('hidden-view');
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Semakan Kuota Global */
 async function loadDashboardStats() {
     try {
         const { count: pegCount } = await supabaseClient
@@ -49,7 +152,7 @@ async function loadDashboardStats() {
             .from('edaftar_bengkel_ppdag')
             .select('*', { count: 'exact', head: true })
             .eq('peranan', 'JURULATIH');
-        
+
         const { count: guruCount } = await supabaseClient
             .from('edaftar_bengkel_ppdag')
             .select('*', { count: 'exact', head: true })
@@ -58,13 +161,12 @@ async function loadDashboardStats() {
         document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
         document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 8`;
         document.getElementById('sum_guru').innerHTML = `${guruCount || 0} <span class="text-sm font-normal text-blue-600">(Semua)</span>`;
-        
+
         document.getElementById('summary-cards').classList.remove('hidden-view');
     } catch (err) {
         console.error("Ralat stat:", err);
     }
 }
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 document.getElementById('login-form').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -75,9 +177,7 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
         document.getElementById('admin_pwd').value = '';
         document.getElementById('login-error').classList.add('hidden-view');
         loadSchools();
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Panggil fungsi stat */
         loadDashboardStats();
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
     } else {
         document.getElementById('login-error').classList.remove('hidden-view');
     }
@@ -90,6 +190,12 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     document.getElementById('filter_subjek').value = '';
     document.getElementById('btn-pdf').disabled = true;
     document.getElementById('summary-cards').classList.add('hidden-view');
+    
+    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang semak sekolah semasa log keluar */
+    const btnSemak = document.getElementById('btn-semak-sekolah');
+    if(btnSemak) btnSemak.classList.add('hidden-view');
+    /* [COMMENT SYNTAX] SURGICAL EDIT END */
+
     currentData = [];
 });
 
@@ -105,7 +211,7 @@ async function loadSchools() {
 
         const select = document.getElementById('edit_sekolah');
         select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
-        
+
         if(data && data.length > 0){
             data.forEach(s => {
                 schoolMap[s.kod_sekolah] = s.nama_sekolah;
@@ -173,11 +279,9 @@ async function fetchTableData() {
 
         if (jurErr) throw jurErr;
 
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Label spesifik saringan untuk Guru */
         document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
         document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 8`;
         document.getElementById('sum_guru').innerHTML = `${(guruData || []).length} <span class="text-sm font-normal text-blue-600">(Saringan)</span>`;
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         let paddedPegawai = [...(pegData || [])];
         while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI' });
@@ -191,11 +295,22 @@ async function fetchTableData() {
 
         if(currentData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
+            
+            /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang semak sekolah jika tiada data */
+            const btnSemak = document.getElementById('btn-semak-sekolah');
+            if(btnSemak) btnSemak.classList.add('hidden-view');
+            /* [COMMENT SYNTAX] SURGICAL EDIT END */
+            
             return;
         }
 
         renderTable();
         btnPdf.disabled = false;
+        
+        /* [COMMENT SYNTAX] SURGICAL EDIT START: Papar butang semak sekolah selepas jadual dimuatkan */
+        const btnSemak = document.getElementById('btn-semak-sekolah');
+        if(btnSemak) btnSemak.classList.remove('hidden-view');
+        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     } catch (err) {
         console.error("Ralat:", err);
@@ -210,7 +325,7 @@ function renderTable() {
     const selGroup = document.getElementById('filter_subjek').value;
     const conf = groupConfig[selGroup];
     let html = '';
-    
+
     currentData.forEach((row, i) => {
         if(row.isDummy) {
             html += `
@@ -224,22 +339,20 @@ function renderTable() {
 
         const role = row.peranan || 'GURU';
         const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
-        
+
         const hadir1 = isExempt ? row[`sesi_${conf.exemptS1}_hadir`] : row.sesi_1_hadir;
         const hadir2 = isExempt ? row[`sesi_${conf.exemptS2}_hadir`] : row.sesi_2_hadir;
 
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Butang sahkan kehadiran dinamik */
         const sesi1Key = isExempt ? conf.exemptS1 : 1;
         const sesi2Key = isExempt ? conf.exemptS2 : 2;
 
-        const badge1 = hadir1 
+        const badge1 = hadir1
             ? `<button onclick="toggleAttendance('${row.id}', ${sesi1Key}, true)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 hover:bg-green-200 text-green-800 transition-colors border border-green-200 cursor-pointer" title="Batal Hadir">Hadir</button>`
             : `<button onclick="toggleAttendance('${row.id}', ${sesi1Key}, false)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 hover:bg-red-200 text-red-800 transition-colors border border-red-200 cursor-pointer" title="Sahkan Hadir">Tidak</button>`;
-        
-        const badge2 = hadir2 
+
+        const badge2 = hadir2
             ? `<button onclick="toggleAttendance('${row.id}', ${sesi2Key}, true)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 hover:bg-green-200 text-green-800 transition-colors border border-green-200 cursor-pointer" title="Batal Hadir">Hadir</button>`
             : `<button onclick="toggleAttendance('${row.id}', ${sesi2Key}, false)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 hover:bg-red-200 text-red-800 transition-colors border border-red-200 cursor-pointer" title="Sahkan Hadir">Tidak</button>`;
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         html += `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -268,7 +381,6 @@ function renderTable() {
     tbody.innerHTML = html;
 }
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Fungsi toggleAttendance */
 window.toggleAttendance = async function(id, sesi, currentStatus) {
     const newStatus = !currentStatus;
     try {
@@ -292,7 +404,6 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
         showMsg("Ralat", "Gagal mengemaskini kehadiran.");
     }
 };
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 window.openDelete = function(id) {
     deletingId = id;
@@ -311,18 +422,16 @@ window.confirmDelete = async function() {
             .from('edaftar_bengkel_ppdag')
             .delete()
             .eq('id', deletingId);
-        
+
         if(error) throw error;
-        
+
         closeDelete();
-        
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Muat semula stat global */
+
         loadDashboardStats();
         if(document.getElementById('filter_subjek').value !== '') {
             fetchTableData();
         }
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
-        
+
         showMsg("Berjaya", "Rekod telah dipadam.");
     } catch (err) {
         console.error(err);
@@ -340,11 +449,11 @@ window.openEdit = function(id) {
     document.getElementById('edit_ic').value = record.ic_no;
     document.getElementById('edit_subjek').value = record.subjek || '';
     document.getElementById('edit_peranan').value = record.peranan || 'GURU';
-    
+
     if(tomSelectInstance && record.kod_sekolah) {
         tomSelectInstance.setValue(record.kod_sekolah);
     }
-    
+
     document.getElementById('edit-modal').classList.remove('hidden-view');
 };
 
@@ -365,7 +474,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     const subjek = document.getElementById('edit_subjek').value;
     const kodSekolah = document.getElementById('edit_sekolah').value;
     const peranan = document.getElementById('edit_peranan').value;
-    
+
     const kemaskiniData = {
         nama_penuh: document.getElementById('edit_nama').value.toUpperCase(),
         subjek: subjek,
@@ -389,13 +498,11 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
         if(error) throw error;
 
         closeEdit();
-        
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Muat semula stat global */
+
         loadDashboardStats();
         if(document.getElementById('filter_subjek').value !== '') {
             fetchTableData();
         }
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         showMsg("Berjaya", "Rekod dikemaskini.");
     } catch (err) {
@@ -406,6 +513,65 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
         btn.textContent = "Simpan Perubahan";
     }
 });
+
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik Buka/Tutup Modal Semak Sekolah */
+window.bukaModalSemakSekolah = function() {
+    const selGroup = document.getElementById('filter_subjek').value;
+    if (!selGroup) {
+        showMsg("Ralat", "Sila pilih kumpulan subjek dan papar data terlebih dahulu.");
+        return;
+    }
+
+    const conf = groupConfig[selGroup];
+    const isSR = conf.label.includes('(SR)');
+    const isSM = conf.label.includes('(SM)');
+
+    let validTypes = [];
+    if (isSR) {
+        validTypes = ['SK', 'SJKT', 'SJKC', 'SR SABK'];
+    } else if (isSM) {
+        validTypes = ['SMK', 'SBP', 'KV', 'SM SABK'];
+    }
+
+    const targetSchools = masterSekolah.filter(s => validTypes.includes(s.jenis));
+
+    const registeredCodes = currentData
+        .filter(r => !r.isDummy && r.kod_sekolah)
+        .map(r => r.kod_sekolah);
+
+    const missingSchools = targetSchools.filter(s => !registeredCodes.includes(s.kod));
+
+    document.getElementById('kategori-sekolah-label').textContent = `KATEGORI: ${isSR ? 'SEKOLAH RENDAH (SR)' : 'SEKOLAH MENENGAH (SM)'}`;
+    document.getElementById('jumlah-sekolah-tiada').textContent = `Jumlah tiada wakil: ${missingSchools.length} daripada ${targetSchools.length} buah sekolah`;
+
+    const ul = document.getElementById('senarai-sekolah-tiada');
+    ul.innerHTML = '';
+
+    if (missingSchools.length === 0) {
+        ul.innerHTML = '<li class="p-3 text-center text-green-600 font-medium">Semua sekolah bagi kategori ini telah mempunyai wakil.</li>';
+    } else {
+        missingSchools.forEach((s, index) => {
+            const li = document.createElement('li');
+            li.className = 'p-3 hover:bg-gray-100 flex flex-col md:flex-row md:justify-between md:items-center';
+            li.innerHTML = `
+                <div>
+                    <span class="font-semibold text-gray-800">${index + 1}. ${s.nama}</span>
+                </div>
+                <div class="mt-1 md:mt-0 text-xs font-medium bg-gray-200 text-gray-700 px-2 py-1 rounded w-max">
+                    ${s.kod} | ${s.jenis}
+                </div>
+            `;
+            ul.appendChild(li);
+        });
+    }
+
+    document.getElementById('modal-sekolah-tiada').classList.remove('hidden-view');
+};
+
+window.tutupModalSemakSekolah = function() {
+    document.getElementById('modal-sekolah-tiada').classList.add('hidden-view');
+};
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 function getLogoBase64() {
     return new Promise((resolve) => {
@@ -426,7 +592,7 @@ function getLogoBase64() {
 
 document.getElementById('btn-pdf').addEventListener('click', async () => {
     if(currentData.length === 0) return;
-    
+
     const btnPdf = document.getElementById('btn-pdf');
     const originalText = btnPdf.textContent;
     btnPdf.textContent = "Menjana...";
@@ -434,20 +600,20 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
     const selGroup = document.getElementById('filter_subjek').value;
     const conf = groupConfig[selGroup];
-    
+
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape'); 
+    const doc = new jsPDF('landscape');
 
     const logoData = await getLogoBase64();
     let startYTable = 38;
 
     if (logoData) {
-        doc.addImage(logoData, 'PNG', 14, 10, 32, 24); 
-        
+        doc.addImage(logoData, 'PNG', 14, 10, 32, 24);
+
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 48, 18);
-        
+
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
         doc.text(`Kumpulan: ${conf.label}`, 48, 25);
@@ -467,7 +633,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
                 "",
                 "",
                 "",
-                "", 
+                "",
                 ""
             ];
         }
@@ -477,32 +643,32 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
             `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`,
             row.ic_no,
             `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
-            "", 
-            ""  
+            "",
+            ""
         ];
     });
 
     doc.autoTable({
         startY: startYTable,
         head: [[
-            'Bil', 
-            'Nama Penuh & Peranan', 
-            'No. Kad Pengenalan', 
-            'Sekolah', 
-            `Sesi 1\n(${conf.d1})`, 
+            'Bil',
+            'Nama Penuh & Peranan',
+            'No. Kad Pengenalan',
+            'Sekolah',
+            `Sesi 1\n(${conf.d1})`,
             `Sesi 2\n(${conf.d2})`
         ]],
         body: tableData,
         theme: 'grid',
-        headStyles: { fillColor: [30, 41, 59], textColor: 255, halign: 'center' }, 
+        headStyles: { fillColor: [30, 41, 59], textColor: 255, halign: 'center' },
         styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
         columnStyles: {
             0: { cellWidth: 12, halign: 'center' },
             1: { cellWidth: 70 },
             2: { cellWidth: 35, halign: 'center' },
             3: { cellWidth: 70 },
-            4: { cellWidth: 40 }, 
-            5: { cellWidth: 40 }  
+            4: { cellWidth: 40 },
+            5: { cellWidth: 40 }
         },
         didDrawCell: function(data) {
             if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
@@ -513,7 +679,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
     const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
     doc.save(`Kehadiran_${safeFileName}.pdf`);
-    
+
     btnPdf.textContent = originalText;
     btnPdf.disabled = false;
 });
