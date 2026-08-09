@@ -30,6 +30,13 @@ const subjectDatesMap = {
     "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
 };
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Tarikh mutlak 8 sesi untuk sijil PEGAWAI/JURULATIH */
+const absoluteDates = [
+    "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", 
+    "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13"
+];
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
+
 const masterSekolah = [
     { kod: "MBA0001", nama: "SEKOLAH KEBANGSAAN MASJID TANAH", jenis: "SK" },
     { kod: "MBA0002", nama: "SEKOLAH KEBANGSAAN TANJUNG BIDARA", jenis: "SK" },
@@ -132,6 +139,52 @@ const masterSekolah = [
     { kod: "MHA0001", nama: "KOLEJ VOKASIONAL DATUK SERI MOHD. ZIN", jenis: "KV" }
 ];
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Format tarikh sijil pintar */
+function formatDateDisplay(dateString) {
+    if(!dateString) return "";
+    const [y, m, d] = dateString.split('-');
+    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+}
+
+function getSmartDateRangeString(datesArray) {
+    if (!datesArray || datesArray.length === 0) return "";
+    if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
+
+    const sorted = [...datesArray].sort();
+    
+    // Check if it's Julai (20-23)
+    const isJulai = sorted.some(d => d.includes('-07-'));
+    // Check if it's Ogos (10-13)
+    const isOgos = sorted.some(d => d.includes('-08-'));
+
+    let res = [];
+    if (isJulai) {
+        const julaiDates = sorted.filter(d => d.includes('-07-'));
+        if (julaiDates.length > 1) {
+             const first = julaiDates[0].split('-')[2];
+             const last = julaiDates[julaiDates.length - 1].split('-')[2];
+             res.push(`${parseInt(first)} Julai hingga ${parseInt(last)} Julai 2026`);
+        } else if (julaiDates.length === 1) {
+             res.push(formatDateDisplay(julaiDates[0]));
+        }
+    }
+
+    if (isOgos) {
+        const ogosDates = sorted.filter(d => d.includes('-08-'));
+        if (ogosDates.length > 1) {
+             const first = ogosDates[0].split('-')[2];
+             const last = ogosDates[ogosDates.length - 1].split('-')[2];
+             res.push(`${parseInt(first)} Ogos hingga ${parseInt(last)} Ogos 2026`);
+        } else if (ogosDates.length === 1) {
+             res.push(formatDateDisplay(ogosDates[0]));
+        }
+    }
+
+    return res.join(' dan ');
+}
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
+
 function showMsg(title, body) {
     document.getElementById('msg-title').textContent = title;
     document.getElementById('msg-body').textContent = body;
@@ -186,20 +239,19 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
 document.getElementById('btn-logout').addEventListener('click', () => {
     document.getElementById('dashboard-view').classList.add('hidden-view');
     document.getElementById('login-view').classList.remove('hidden-view');
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
     document.getElementById('filter_subjek').value = '';
     document.getElementById('btn-pdf').disabled = true;
+    document.getElementById('btn-sijil-pukal').disabled = true;
+    document.getElementById('check-all-cert').disabled = true;
     document.getElementById('summary-cards').classList.add('hidden-view');
     
     const btnSemak = document.getElementById('btn-semak-sekolah');
     if(btnSemak) btnSemak.classList.add('hidden-view');
 
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang reset semasa log keluar */
     const btnReset = document.getElementById('btn-reset-filter');
     if(btnReset) btnReset.classList.add('hidden-view');
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang pukal dan butang kuota semasa log keluar */
     const btnSemakKuota = document.getElementById('btn-semak-kuota');
     const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
     const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
@@ -211,7 +263,6 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     if(btnPukal2) btnPukal2.classList.add('hidden-view');
     if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
     if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     currentData = [];
     currentFilter = null;
@@ -257,13 +308,13 @@ async function fetchTableData() {
     const selGroup = document.getElementById('filter_subjek').value;
     const tbody = document.getElementById('table-body');
     const btnPdf = document.getElementById('btn-pdf');
+    const btnSijilPukal = document.getElementById('btn-sijil-pukal');
+    const checkAll = document.getElementById('check-all-cert');
     const summary = document.getElementById('summary-cards');
 
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Reset filter state jika tukar subjek */
     currentFilter = null;
     const btnReset = document.getElementById('btn-reset-filter');
     if(btnReset) btnReset.classList.add('hidden-view');
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     if(!selGroup) {
         showMsg("Ralat", "Sila pilih kumpulan subjek.");
@@ -271,10 +322,13 @@ async function fetchTableData() {
     }
 
     const conf = groupConfig[selGroup];
-    const isSM = conf.label.includes('(SM)'); // Kenalpasti jika kumpulan SM
+    const isSM = conf.label.includes('(SM)');
 
-    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
     btnPdf.disabled = true;
+    btnSijilPukal.disabled = true;
+    checkAll.disabled = true;
+    checkAll.checked = false;
     currentData = [];
 
     try {
@@ -319,12 +373,11 @@ async function fetchTableData() {
         summary.classList.remove('hidden-view');
 
         if(currentData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
             
             const btnSemak = document.getElementById('btn-semak-sekolah');
             if(btnSemak) btnSemak.classList.add('hidden-view');
 
-            /* [COMMENT SYNTAX] SURGICAL EDIT START: Sembunyi butang pukal dan kuota jika tiada rekod */
             const btnSemakKuota = document.getElementById('btn-semak-kuota');
             const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
             const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
@@ -336,18 +389,18 @@ async function fetchTableData() {
             if(btnPukal2) btnPukal2.classList.add('hidden-view');
             if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
             if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
-            /* [COMMENT SYNTAX] SURGICAL EDIT END */
             
             return;
         }
 
         renderTable(currentFilter);
         btnPdf.disabled = false;
+        btnSijilPukal.disabled = false;
+        checkAll.disabled = false;
         
         const btnSemak = document.getElementById('btn-semak-sekolah');
         if(btnSemak) btnSemak.classList.remove('hidden-view');
 
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Tunjuk butang pukal dan butang kuota (jika SM) jika ada rekod */
         const btnSemakKuota = document.getElementById('btn-semak-kuota');
         const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
         const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
@@ -364,11 +417,10 @@ async function fetchTableData() {
         if (btnPukal2) btnPukal2.classList.remove('hidden-view');
         if (btnPukalTakHadir1) btnPukalTakHadir1.classList.remove('hidden-view');
         if (btnPukalTakHadir2) btnPukalTakHadir2.classList.remove('hidden-view');
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     } catch (err) {
         console.error("Ralat:", err);
-        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-red-500">Berlaku ralat sistem. Sila cuba lagi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-red-500">Berlaku ralat sistem. Sila cuba lagi.</td></tr>';
     }
 }
 
@@ -399,6 +451,7 @@ window.tapisSenarai = function(peranan) {
     btnReset.classList.remove('hidden-view');
 };
 
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Rendertable ditambah dengan checkbox sijil */
 function renderTable(filterPeranan = null) {
     const tbody = document.getElementById('table-body');
     const selGroup = document.getElementById('filter_subjek').value;
@@ -411,14 +464,17 @@ function renderTable(filterPeranan = null) {
     }
 
     if (dataToRender.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk kategori ${filterPeranan || 'ini'}.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk kategori ${filterPeranan || 'ini'}.</td></tr>`;
         return;
     }
+
+    document.getElementById('check-all-cert').checked = false;
 
     dataToRender.forEach((row, i) => {
         if(row.isDummy) {
             html += `
                 <tr class="bg-slate-50/50">
+                    <td class="px-4 py-4 text-center"></td>
                     <td class="px-4 py-4 text-sm text-slate-400 text-center">${i + 1}</td>
                     <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Ruang ${row.roleLabel} (Kosong)</td>
                 </tr>
@@ -443,8 +499,28 @@ function renderTable(filterPeranan = null) {
             ? `<button onclick="toggleAttendance('${row.id}', ${sesi2Key}, true)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-green-100 hover:bg-green-200 text-green-800 transition-colors border border-green-200 cursor-pointer" title="Batal Hadir">Hadir</button>`
             : `<button onclick="toggleAttendance('${row.id}', ${sesi2Key}, false)" class="px-2 py-0.5 inline-flex text-xs leading-4 font-semibold rounded-full bg-red-100 hover:bg-red-200 text-red-800 transition-colors border border-red-200 cursor-pointer" title="Sahkan Hadir">Tidak</button>`;
 
+        // Semak kelayakan sijil
+        let layakSijil = false;
+        if (isExempt) {
+            // Pegawai/Jurulatih layak selagi wujud (boleh je muat turun, tarikh set secara autotrack dalam sistem atau pukal)
+            // Namun logik sedia ada, sijil mereka dicetak berdasarkan apa yg dihadiri. Sini kita benarkan kotak semak if at least 1 hadir
+            let hasAnyAttended = false;
+            for(let j=1; j<=8; j++) {
+                if(row[`sesi_${j}_hadir`]) hasAnyAttended = true;
+            }
+            layakSijil = hasAnyAttended;
+        } else {
+            // GURU MESTI hadir kedua-dua
+            layakSijil = hadir1 && hadir2;
+        }
+
+        const checkboxHtml = layakSijil 
+            ? `<input type="checkbox" class="check-cert rounded text-blue-600 focus:ring-blue-500" value="${row.id}">`
+            : `<input type="checkbox" disabled class="rounded text-gray-300 opacity-50 cursor-not-allowed" title="Belum cukup kehadiran">`;
+
         html += `
             <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-4 text-center align-top">${checkboxHtml}</td>
                 <td class="px-4 py-4 text-sm text-slate-500 text-center align-top">${i + 1}</td>
                 <td class="px-4 py-4 align-top">
                     <div class="text-sm font-bold text-slate-900 uppercase break-words">${row.nama_penuh}</div>
@@ -471,6 +547,15 @@ function renderTable(filterPeranan = null) {
     });
     tbody.innerHTML = html;
 }
+
+document.getElementById('check-all-cert').addEventListener('change', function() {
+    const isChecked = this.checked;
+    const checkboxes = document.querySelectorAll('.check-cert');
+    checkboxes.forEach(cb => {
+        cb.checked = isChecked;
+    });
+});
+/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 window.toggleAttendance = async function(id, sesi, currentStatus) {
     const newStatus = !currentStatus;
@@ -559,26 +644,6 @@ async function markBulkAttendance(sesi, isHadir) {
         document.getElementById(btnId).disabled = false;
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
-    const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
-    const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
-    const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-
-    if (btnPukal1) {
-        btnPukal1.addEventListener('click', () => markBulkAttendance(1, true));
-    }
-    if (btnPukal2) {
-        btnPukal2.addEventListener('click', () => markBulkAttendance(2, true));
-    }
-    if (btnPukalTakHadir1) {
-        btnPukalTakHadir1.addEventListener('click', () => markBulkAttendance(1, false));
-    }
-    if (btnPukalTakHadir2) {
-        btnPukalTakHadir2.addEventListener('click', () => markBulkAttendance(2, false));
-    }
-});
 
 window.openDelete = function(id) {
     deletingId = id;
@@ -746,7 +811,6 @@ window.tutupModalSemakSekolah = function() {
     document.getElementById('modal-sekolah-tiada').classList.add('hidden-view');
 };
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Tambah fungsi semak kuota pendaftaran sekolah (Khusus SM) */
 window.bukaModalSemakKuota = function() {
     const selGroup = document.getElementById('filter_subjek').value;
     if (!selGroup) {
@@ -765,7 +829,6 @@ window.bukaModalSemakKuota = function() {
     const validTypes = ['SMK', 'SBP', 'KV', 'SM SABK'];
     const targetSchools = masterSekolah.filter(s => validTypes.includes(s.jenis));
 
-    // Kira kekerapan pendaftaran GURU dari setiap sekolah
     const pendaftaranSekolah = {};
     targetSchools.forEach(s => pendaftaranSekolah[s.kod] = 0);
 
@@ -777,7 +840,6 @@ window.bukaModalSemakKuota = function() {
         }
     });
 
-    // Kenalpasti sekolah yang tidak mencapai kuota 3
     const kurangKuotaSchools = targetSchools.map(s => ({
         ...s,
         jumlahDaftar: pendaftaranSekolah[s.kod]
@@ -796,7 +858,6 @@ window.bukaModalSemakKuota = function() {
             const li = document.createElement('li');
             li.className = 'p-3 hover:bg-red-50 flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-100 last:border-0';
             
-            // Highlight merah jika sifar, oren jika 1-2
             const badgeWarna = s.jumlahDaftar === 0 ? 'bg-red-100 text-red-800 border-red-200' : 'bg-orange-100 text-orange-800 border-orange-200';
             
             li.innerHTML = `
@@ -818,13 +879,12 @@ window.bukaModalSemakKuota = function() {
 window.tutupModalSemakKuota = function() {
     document.getElementById('modal-kuota-sekolah').classList.add('hidden-view');
 };
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
-function getLogoBase64() {
+function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'Anonymous';
-        img.src = 'ikonppd.png';
+        img.src = imgUrl;
         img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
@@ -835,6 +895,27 @@ function getLogoBase64() {
         };
         img.onerror = () => resolve(null);
     });
+}
+
+function getLogoBase64() {
+    return getBase64Image('ikonppd.png');
+}
+
+async function getCursiveFontBase64() {
+    try {
+        const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/greatvibes/GreatVibes-Regular.ttf');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    } catch (e) {
+        console.error("Gagal memuat turun font cursive:", e);
+        return null;
+    }
 }
 
 document.getElementById('btn-pdf').addEventListener('click', async () => {
@@ -848,13 +929,11 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     const selGroup = document.getElementById('filter_subjek').value;
     const conf = groupConfig[selGroup];
 
-    // Filter by current role view if active
     let dataToExport = currentData;
     if (currentFilter) {
         dataToExport = currentData.filter(row => row.peranan === currentFilter || row.roleLabel === currentFilter);
     }
     
-    // Filter only those who attended BOTH sessions for their respective group
     const fullyAttendedData = dataToExport.filter(row => {
         if(row.isDummy) return false;
         
@@ -937,7 +1016,6 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
         },
         didDrawCell: function(data) {
             if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
-                // Ruang tandatangan dikosongkan untuk pengesahan kehadiran fizikal
             }
         }
     });
@@ -949,3 +1027,239 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     btnPdf.textContent = originalText;
     btnPdf.disabled = false;
 });
+
+/* [COMMENT SYNTAX] SURGICAL EDIT START: Logik Penjanaan Sijil Pukal (Baru) */
+async function generateSingleCertificateDocument(record, jsPDF, logoData, signData, fontB64) {
+    const peranan = record.peranan || 'GURU';
+    const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
+    let paparanTarikh = "";
+
+    if (isExempt) {
+        let attendedDatesRaw = [];
+        for (let i = 1; i <= 8; i++) {
+            if (record[`sesi_${i}_hadir`]) {
+                attendedDatesRaw.push(absoluteDates[i-1]);
+            }
+        }
+        paparanTarikh = getSmartDateRangeString(attendedDatesRaw);
+    } else {
+        const t1 = formatDateDisplay(record.sesi_1_tarikh);
+        const t2 = formatDateDisplay(record.sesi_2_tarikh);
+        paparanTarikh = `${t1} hingga ${t2}`; // Menukar '&' kepada 'hingga'
+    }
+
+    const doc = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const centerX = pageWidth / 2;
+
+    if (logoData) {
+        doc.addImage(logoData, 'PNG', centerX - 25.3, 20, 50.6, 33.73);
+    }
+
+    if (fontB64) {
+        doc.addFileToVFS('Cursive.ttf', fontB64);
+        doc.addFont('Cursive.ttf', 'Cursive', 'normal');
+        doc.setFont("Cursive", "normal");
+        doc.setFontSize(80); 
+    } else {
+        doc.setFont("helvetica", "bolditalic");
+        doc.setFontSize(42); 
+    }
+
+    const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
+    doc.setTextColor(220, 38, 38); 
+    doc.text(sijilTitle, centerX, 90, { align: 'center' }); 
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(14);
+    doc.setTextColor(75, 85, 99);
+    doc.text("Dengan ini disahkan bahawa", centerX, 115, { align: 'center' });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(17, 24, 39);
+    doc.text(record.nama_penuh, centerX, 130, { align: 'center' });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`No. Kad Pengenalan: ${record.ic_no}`, centerX, 140, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setTextColor(75, 85, 99);
+    doc.text("telah menyertai", centerX, 155, { align: 'center' });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(30, 64, 175);
+    doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
+    doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(14);
+    doc.setTextColor(75, 85, 99);
+    let paparanPeranan = peranan === 'GURU' ? "sebagai PESERTA" : `sebagai ${peranan}`;
+    doc.text(paparanPeranan, centerX, 193, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text("pada", centerX, 205, { align: 'center' });
+    doc.text(paparanTarikh, centerX, 213, { align: 'center', maxWidth: 170 });
+
+    if (signData) {
+        doc.addImage(signData, 'PNG', centerX - 48.3, 230, 96.6, 38.64);
+    }
+
+    return doc;
+}
+
+document.getElementById('btn-sijil-pukal').addEventListener('click', async () => {
+    const checkedBoxes = document.querySelectorAll('.check-cert:checked');
+    if (checkedBoxes.length === 0) {
+        showMsg("Tiada Pilihan", "Sila tandakan sekurang-kurangnya satu peserta untuk muat turun sijil.");
+        return;
+    }
+
+    const btn = document.getElementById('btn-sijil-pukal');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menjana...`;
+    btn.disabled = true;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const logoData = await getLogoBase64();
+        const signData = await getBase64Image('tttnhj.png');
+        const fontB64 = await getCursiveFontBase64();
+
+        const zip = new JSZip(); // Using JSZip if available or we fallback to single pdfs. Wait, no JSZip loaded. 
+        // We will generate a SINGLE PDF containing multiple pages.
+
+        let mainDoc = null;
+
+        for (let i = 0; i < checkedBoxes.length; i++) {
+            const recordId = checkedBoxes[i].value;
+            const record = currentData.find(r => r.id === recordId);
+            if (!record) continue;
+
+            const tempDoc = await generateSingleCertificateDocument(record, jsPDF, logoData, signData, fontB64);
+            
+            if (i === 0) {
+                mainDoc = tempDoc;
+            } else {
+                mainDoc.addPage();
+                // Instead of regenerating all text, jsPDF doesn't have an easy "copy page" api across instances natively in this setup.
+                // We recreate the page ON the main doc directly.
+                // Reset page context.
+                // To do this properly without tempDoc, we refactor slightly to pass mainDoc into a draw function.
+            }
+        }
+        
+        // Refactored Multi-page approach:
+        const finalDoc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        
+        if (fontB64) {
+            finalDoc.addFileToVFS('Cursive.ttf', fontB64);
+            finalDoc.addFont('Cursive.ttf', 'Cursive', 'normal');
+        }
+
+        for (let i = 0; i < checkedBoxes.length; i++) {
+            if (i > 0) finalDoc.addPage();
+            
+            const recordId = checkedBoxes[i].value;
+            const record = currentData.find(r => r.id === recordId);
+            if (!record) continue;
+
+            // DRAW LOGIC ON finalDoc
+            const peranan = record.peranan || 'GURU';
+            const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
+            let paparanTarikh = "";
+
+            if (isExempt) {
+                let attendedDatesRaw = [];
+                for (let j = 1; j <= 8; j++) {
+                    if (record[`sesi_${j}_hadir`]) {
+                        attendedDatesRaw.push(absoluteDates[j-1]);
+                    }
+                }
+                paparanTarikh = getSmartDateRangeString(attendedDatesRaw);
+            } else {
+                const t1 = formatDateDisplay(record.sesi_1_tarikh);
+                const t2 = formatDateDisplay(record.sesi_2_tarikh);
+                paparanTarikh = `${t1} hingga ${t2}`; 
+            }
+
+            const centerX = finalDoc.internal.pageSize.getWidth() / 2;
+
+            if (logoData) {
+                finalDoc.addImage(logoData, 'PNG', centerX - 25.3, 20, 50.6, 33.73);
+            }
+
+            if (fontB64) {
+                finalDoc.setFont("Cursive", "normal");
+                finalDoc.setFontSize(80); 
+            } else {
+                finalDoc.setFont("helvetica", "bolditalic");
+                finalDoc.setFontSize(42); 
+            }
+
+            const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
+            finalDoc.setTextColor(220, 38, 38); 
+            finalDoc.text(sijilTitle, centerX, 90, { align: 'center' }); 
+
+            finalDoc.setFont("helvetica", "normal");
+            finalDoc.setFontSize(14);
+            finalDoc.setTextColor(75, 85, 99);
+            finalDoc.text("Dengan ini disahkan bahawa", centerX, 115, { align: 'center' });
+
+            finalDoc.setFont("helvetica", "bold");
+            finalDoc.setFontSize(20);
+            finalDoc.setTextColor(17, 24, 39);
+            finalDoc.text(record.nama_penuh, centerX, 130, { align: 'center' });
+
+            finalDoc.setFont("helvetica", "normal");
+            finalDoc.setFontSize(12);
+            finalDoc.text(`No. Kad Pengenalan: ${record.ic_no}`, centerX, 140, { align: 'center' });
+
+            finalDoc.setFontSize(14);
+            finalDoc.setTextColor(75, 85, 99);
+            finalDoc.text("telah menyertai", centerX, 155, { align: 'center' });
+
+            finalDoc.setFont("helvetica", "bold");
+            finalDoc.setFontSize(16);
+            finalDoc.setTextColor(30, 64, 175);
+            finalDoc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
+            finalDoc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
+
+            finalDoc.setFont("helvetica", "normal");
+            finalDoc.setFontSize(14);
+            finalDoc.setTextColor(75, 85, 99);
+            let paparanPeranan = peranan === 'GURU' ? "sebagai PESERTA" : `sebagai ${peranan}`;
+            finalDoc.text(paparanPeranan, centerX, 193, { align: 'center' });
+
+            finalDoc.setFontSize(12);
+            finalDoc.text("pada", centerX, 205, { align: 'center' });
+            finalDoc.text(paparanTarikh, centerX, 213, { align: 'center', maxWidth: 170 });
+
+            if (signData) {
+                finalDoc.addImage(signData, 'PNG', centerX - 48.3, 230, 96.6, 38.64);
+            }
+        }
+
+        const selGroup = document.getElementById('filter_subjek').value;
+        const groupLabel = groupConfig[selGroup] ? groupConfig[selGroup].label.replace(/[^a-zA-Z0-9]/g, '_') : 'Pukal';
+        
+        finalDoc.save(`Sijil_Pukal_${groupLabel}.pdf`);
+
+        showMsg("Berjaya", `${checkedBoxes.length} sijil telah digabungkan dan dimuat turun.`);
+    } catch (err) {
+        console.error("Ralat janaan sijil pukal:", err);
+        showMsg("Ralat", "Gagal menjana sijil pukal.");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+/* [COMMENT SYNTAX] SURGICAL EDIT END */

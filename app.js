@@ -1,4 +1,3 @@
-/* STREAMING_CHUNK:Konfigurasi dan pembolehubah awalan... */
 const SUPABASE_URL = 'https://app.tech4ag.my';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -19,26 +18,23 @@ const subjectDatesMap = {
     "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
 };
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Tarikh mutlak 8 sesi */
 const absoluteDates = [
-    "2026-07-20", // Sesi 1 (Mate SR)
-    "2026-07-21", // Sesi 2 (Mate SR)
-    "2026-07-22", // Sesi 3 (Sains SR)
-    "2026-07-23", // Sesi 4 (Sains SR)
-    "2026-08-10", // Sesi 5 (Mate/SK SM)
-    "2026-08-11", // Sesi 6 (Mate/SK SM)
-    "2026-08-12", // Sesi 7 (Sains/ST SM)
-    "2026-08-13"  // Sesi 8 (Sains/ST SM)
+    "2026-07-20", 
+    "2026-07-21", 
+    "2026-07-22", 
+    "2026-07-23", 
+    "2026-08-10", 
+    "2026-08-11", 
+    "2026-08-12", 
+    "2026-08-13"  
 ];
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Koordinat bengkel dan fungsi jarak */
 const WORKSHOP_LAT = 2.3448043344238445;
 const WORKSHOP_LNG = 102.1049791621177;
 const MAX_RADIUS_METERS = 200;
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Jejari bumi dalam meter
+    const R = 6371e3; 
     const p1 = lat1 * Math.PI / 180;
     const p2 = lat2 * Math.PI / 180;
     const deltaP = (lat2 - lat1) * Math.PI / 180;
@@ -51,14 +47,12 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
     return R * c; 
 }
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 let tomSelectInstance = null;
 let currentRecord = null;
 let schoolsLoaded = false;
 let schoolMap = {};
 
-/* STREAMING_CHUNK:Fungsi utiliti paparan dan format... */
 function showView(viewName) {
     Object.values(views).forEach(v => v.classList.add('hidden-view'));
     views[viewName].classList.remove('hidden-view');
@@ -106,6 +100,43 @@ function formatDateDisplay(dateString) {
     return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
 }
 
+function getSmartDateRangeString(datesArray) {
+    if (!datesArray || datesArray.length === 0) return "";
+    if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
+
+    const sorted = [...datesArray].sort();
+    
+    // Check if it's Julai (20-23)
+    const isJulai = sorted.some(d => d.includes('-07-'));
+    // Check if it's Ogos (10-13)
+    const isOgos = sorted.some(d => d.includes('-08-'));
+
+    let res = [];
+    if (isJulai) {
+        const julaiDates = sorted.filter(d => d.includes('-07-'));
+        if (julaiDates.length > 1) {
+             const first = julaiDates[0].split('-')[2];
+             const last = julaiDates[julaiDates.length - 1].split('-')[2];
+             res.push(`${parseInt(first)} Julai hingga ${parseInt(last)} Julai 2026`);
+        } else if (julaiDates.length === 1) {
+             res.push(formatDateDisplay(julaiDates[0]));
+        }
+    }
+
+    if (isOgos) {
+        const ogosDates = sorted.filter(d => d.includes('-08-'));
+        if (ogosDates.length > 1) {
+             const first = ogosDates[0].split('-')[2];
+             const last = ogosDates[ogosDates.length - 1].split('-')[2];
+             res.push(`${parseInt(first)} Ogos hingga ${parseInt(last)} Ogos 2026`);
+        } else if (ogosDates.length === 1) {
+             res.push(formatDateDisplay(ogosDates[0]));
+        }
+    }
+
+    return res.join(' dan ');
+}
+
 function isDateArrived(dateString) {
     if (!dateString) return false;
     const [y, m, d] = dateString.split('-');
@@ -115,7 +146,6 @@ function isDateArrived(dateString) {
     return todayDate >= targetDate;
 }
 
-/* STREAMING_CHUNK:Sistem pendaftaran dan carian rekod... */
 async function loadSchools() {
     if (schoolsLoaded) return;
     try {
@@ -285,15 +315,12 @@ async function registerUser(e) {
     }
 }
 
-/* STREAMING_CHUNK:Pengesahan kehadiran dan GPS... */
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Pintasan kawalan lokasi GPS */
 async function handleAttendanceClick(sesi, tarikh, peranan) {
     if (!isDateArrived(tarikh)) {
         showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
         return;
     }
     
-    // LOGIK BAHARU: Jika BUKAN PEGAWAI dan BUKAN JURULATIH, wajib GPS
     const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
     
     if (!isExempt) {
@@ -345,7 +372,6 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
         markAttendance(sesi);
     }
 }
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
 async function markAttendance(sesi) {
     if(!currentRecord) return;
@@ -376,8 +402,6 @@ async function markAttendance(sesi) {
     }
 }
 
-/* STREAMING_CHUNK:Penjanaan PDF Sijil... */
-/* [COMMENT SYNTAX] SURGICAL EDIT START: Buang logik pratonton sijil */
 function getBase64Image(imgUrl) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -395,7 +419,6 @@ function getBase64Image(imgUrl) {
     });
 }
 
-// Menyuntik font Cursive (Great Vibes) ke Base64 secara dinamik via CDN stabil
 async function getCursiveFontBase64() {
     try {
         const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/greatvibes/GreatVibes-Regular.ttf');
@@ -413,29 +436,29 @@ async function getCursiveFontBase64() {
     }
 }
 
-// Logik utama pembinaan PDF
 async function createPDFDocument() {
     const peranan = currentRecord.peranan || 'GURU';
     const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
-    let tarikhTerpilih = [];
+    let paparanTarikh = "";
 
     if (isExempt) {
         const checkboxes = document.querySelectorAll('.cert-checkbox:checked');
         if (checkboxes.length === 0) {
             throw new Error("NO_DATE_SELECTED");
         }
+        let tarikhMentah = [];
         checkboxes.forEach(cb => {
-            tarikhTerpilih.push(cb.value);
+            tarikhMentah.push(cb.value);
         });
+        paparanTarikh = getSmartDateRangeString(tarikhMentah);
     } else {
         const t1 = formatDateDisplay(currentRecord.sesi_1_tarikh);
         const t2 = formatDateDisplay(currentRecord.sesi_2_tarikh);
-        tarikhTerpilih.push(`${t1} & ${t2}`);
+        paparanTarikh = `${t1} hingga ${t2}`;
     }
 
     const { jsPDF } = window.jspdf;
     
-    // 1. Orientasi Potrait (p)
     const doc = new jsPDF({
         orientation: 'p',
         unit: 'mm',
@@ -449,31 +472,27 @@ async function createPDFDocument() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const centerX = pageWidth / 2;
 
-    // 2. Logo dibesarkan lagi 15% (Dari V2 w:44 h:29.33 -> Baru w:50.6 h:33.73)
     if (logoData) {
         doc.addImage(logoData, 'PNG', centerX - 25.3, 20, 50.6, 33.73);
     }
 
-    // Suntik Font Cursive ke dalam VFS jsPDF jika berjaya
     if (fontB64) {
         doc.addFileToVFS('Cursive.ttf', fontB64);
         doc.addFont('Cursive.ttf', 'Cursive', 'normal');
     }
 
-    // 3. Logik Tajuk Sijil
     const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
 
-    // 4. Tetapkan font Cursive dan warna Merah (Dibesarkan lagi 20%)
     if (fontB64) {
         doc.setFont("Cursive", "normal");
-        doc.setFontSize(80); // (Dari V2 48 -> 80)
+        doc.setFontSize(80); 
     } else {
         doc.setFont("helvetica", "bolditalic");
-        doc.setFontSize(42); // (Dari V2 32 -> 42)
+        doc.setFontSize(42); 
     }
     
-    doc.setTextColor(220, 38, 38); // Merah eksklusif
-    doc.text(sijilTitle, centerX, 90, { align: 'center' }); // Turun sikit sbb font & logo besar
+    doc.setTextColor(220, 38, 38); 
+    doc.text(sijilTitle, centerX, 90, { align: 'center' }); 
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
@@ -499,7 +518,6 @@ async function createPDFDocument() {
     doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
     doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
 
-    // 5. Peranan: JURULATIH/PEGAWAI kekal, GURU jadi PESERTA
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
@@ -513,14 +531,11 @@ async function createPDFDocument() {
     
     doc.text(paparanPeranan, centerX, 193, { align: 'center' });
 
-    // 6. Tarikh letak bawah perkataan "pada"
     doc.setFontSize(12);
     doc.text("pada", centerX, 205, { align: 'center' });
     
-    let tarikhGabung = tarikhTerpilih.join(', ');
-    doc.text(tarikhGabung, centerX, 213, { align: 'center', maxWidth: 170 });
+    doc.text(paparanTarikh, centerX, 213, { align: 'center', maxWidth: 170 });
 
-    // 7. Tandatangan dibesarkan lagi 15% (Dari V2 w:84 h:33.6 -> Baru w:96.6 h:38.64)
     if (signData) {
         doc.addImage(signData, 'PNG', centerX - 48.3, 230, 96.6, 38.64);
     }
@@ -528,9 +543,7 @@ async function createPDFDocument() {
     return doc;
 }
 
-// Butang Jana & Muat Turun
 async function generateCertificate() {
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Semakan rekod sesi berdasar pengecualian peranan */
     const isExempt = currentRecord.peranan === 'PEGAWAI' || currentRecord.peranan === 'JURULATIH';
     
     if (!isExempt) {
@@ -542,7 +555,6 @@ async function generateCertificate() {
             return;
         }
     }
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     const btn = document.getElementById('btn_jana_sijil');
     if(!btn) return;
@@ -571,9 +583,7 @@ async function generateCertificate() {
 const btnJana = document.getElementById('btn_jana_sijil');
 
 if(btnJana) btnJana.addEventListener('click', generateCertificate);
-/* [COMMENT SYNTAX] SURGICAL EDIT END */
 
-/* STREAMING_CHUNK:Penyediaan papan pemuka (dashboard)... */
 function setupDashboard() {
     if(!currentRecord) return;
 
@@ -599,9 +609,7 @@ function setupDashboard() {
     const totalSessions = isExempt ? 8 : 2;
     let allAttended = true;
     
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Logik penjejakan kehadiran untuk sijil (Dipermudahkan) */
     let attendedDates = [];
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     for (let i = 1; i <= totalSessions; i++) {
         const isAttended = currentRecord[`sesi_${i}_hadir`];
@@ -610,11 +618,9 @@ function setupDashboard() {
         const tarikhDisplay = isExempt ? formatDateDisplay(absoluteDates[i-1]) : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
         const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
         
-        /* [COMMENT SYNTAX] SURGICAL EDIT START: Simpan semua tarikh untuk pilihan Pegawai */
-        if (isExempt) {
-             attendedDates.push(tarikhDisplay);
+        if (isExempt && isAttended) {
+             attendedDates.push(rawTarikh);
         }
-        /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
         const div = document.createElement('div');
         div.className = "border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm";
@@ -638,7 +644,6 @@ function setupDashboard() {
         sessionsContainer.appendChild(div);
     }
     
-    /* [COMMENT SYNTAX] SURGICAL EDIT START: Sentiasa papar Sijil */
     const sijilContainer = document.getElementById('sijil_container');
     const sijilOptions = document.getElementById('sijil_options_container');
     const sijilCheckboxes = document.getElementById('sijil_checkboxes');
@@ -648,19 +653,19 @@ function setupDashboard() {
 
     if (isExempt) {
         sijilOptions.classList.remove('hidden-view');
-        attendedDates.forEach((tarikh, idx) => {
+        attendedDates.forEach((tarikhRaw) => {
+            const tarikhDisplay = formatDateDisplay(tarikhRaw);
             const label = document.createElement('label');
             label.className = "flex items-center space-x-2 text-sm text-gray-700 cursor-pointer";
             label.innerHTML = `
-                <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500" value="${tarikh}" checked>
-                <span>${tarikh}</span>
+                <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500" value="${tarikhRaw}" checked>
+                <span>${tarikhDisplay}</span>
             `;
             sijilCheckboxes.appendChild(label);
         });
     } else {
         sijilOptions.classList.add('hidden-view');
     }
-    /* [COMMENT SYNTAX] SURGICAL EDIT END */
 
     const btnPenilaian = document.getElementById('btn_penilaian');
     if(allAttended) {
@@ -677,7 +682,6 @@ function setupDashboard() {
     }
 }
 
-/* STREAMING_CHUNK:Pemasangan event listener DOM... */
 document.getElementById('check-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const ic = document.getElementById('ic_check').value.trim();
