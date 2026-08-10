@@ -188,6 +188,32 @@ async function checkRoleAvailability() {
     }
 }
 
+function filterAvailableSubjects() {
+    const subjectSelect = document.getElementById('reg_subjek');
+    if (!subjectSelect) return;
+
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const todayString = `${year}-${month}-${day}`;
+
+    Array.from(subjectSelect.options).forEach(option => {
+        if (!option.value) return; 
+
+        const dates = subjectDatesMap[option.value];
+        if (dates) {
+            if (todayString === dates.s1 || todayString === dates.s2) {
+                option.disabled = false;
+                option.textContent = option.value;
+            } else {
+                option.disabled = true;
+                option.textContent = `${option.value} (Closed)`;
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     checkRoleAvailability();
 });
@@ -255,6 +281,7 @@ async function checkIC(ic) {
             document.getElementById('reg_ic').value = ic;
             await loadSchools();
             await checkRoleAvailability();
+            filterAvailableSubjects();
             showView('register');
             showToast("Rekod tidak ditemui. Sila daftar.", "info");
         }
