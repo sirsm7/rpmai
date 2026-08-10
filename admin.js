@@ -134,7 +134,8 @@ const masterSekolah = [
     { kod: "MFT0002", nama: "SEKOLAH MENENGAH AGAMA (JAIM) AL-ASYRAF", jenis: "SM SABK" },
     { kod: "MFT0003", nama: "SEKOLAH MENENGAH AGAMA (JAIM) DARUL FALAH", jenis: "SM SABK" },
     { kod: "MFT0004", nama: "SEKOLAH MENENGAH IMTIAZ ULUL ALBAB MELAKA", jenis: "SM SABK" },
-    { kod: "MHA0001", nama: "KOLEJ VOKASIONAL DATUK SERI MOHD. ZIN", jenis: "KV" }
+    { kod: "MHA0001", nama: "KOLEJ VOKASIONAL DATUK SERI MOHD. ZIN", jenis: "KV" },
+    { kod: "M030", nama: "PEJABAT PENDIDIKAN DAERAH ALOR GAJAH", jenis: "PPD" }
 ];
 
 function formatDateDisplay(dateString) {
@@ -206,7 +207,7 @@ async function loadDashboardStats() {
             .eq('peranan', 'GURU');
 
         document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 9`; 
+        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 9`;
         document.getElementById('sum_guru').innerHTML = `${guruCount || 0}`;
 
         document.getElementById('summary-cards').classList.remove('hidden-view');
@@ -284,6 +285,12 @@ async function loadSchools() {
                 select.appendChild(option);
             });
         }
+        
+        schoolMap["M030"] = "PEJABAT PENDIDIKAN DAERAH ALOR GAJAH";
+        const ppdOption = document.createElement('option');
+        ppdOption.value = "M030";
+        ppdOption.textContent = `PEJABAT PENDIDIKAN DAERAH ALOR GAJAH (M030)`;
+        select.appendChild(ppdOption);
 
         if(tomSelectInstance) tomSelectInstance.destroy();
         tomSelectInstance = new TomSelect("#edit_sekolah", {
@@ -360,7 +367,7 @@ async function fetchTableData() {
         while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI', peranan: 'PEGAWAI' });
 
         let paddedJurulatih = [...(jurData || [])];
-        while(paddedJurulatih.length < 9) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' }); 
+        while(paddedJurulatih.length < 9) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' });
 
         currentData = [...paddedPegawai, ...paddedJurulatih, ...(guruData || [])];
 
@@ -990,9 +997,16 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
     const tableData = fullyAttendedData.map((row, i) => {
         const role = row.peranan || 'GURU';
+        let namaPapar = row.nama_penuh;
+        
+        // Pengecualian label bagi sekolah PPDAG (M030)
+        if (row.kod_sekolah !== 'M030') {
+            namaPapar = `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`;
+        }
+        
         return [
             i + 1,
-            `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`,
+            namaPapar,
             row.ic_no,
             `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
             "",
