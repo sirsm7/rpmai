@@ -146,6 +146,62 @@ function isDateArrived(dateString) {
     return todayDate >= targetDate;
 }
 
+// FUNGSI BAHARU: Semak ketersediaan peranan
+async function checkRoleAvailability() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('edaftar_bengkel_ppdag')
+            .select('peranan');
+
+        if (error) throw error;
+
+        // Kira bilangan pendaftaran untuk setiap peranan
+        const countMap = {
+            'PEGAWAI': 0,
+            'JURULATIH': 0
+            // Tambah peranan lain di sini jika ada had
+        };
+
+        if (data) {
+            data.forEach(item => {
+                if (countMap[item.peranan] !== undefined) {
+                    countMap[item.peranan]++;
+                }
+            });
+        }
+
+        // Tetapkan had (berdasarkan logik asal)
+        const limits = {
+            'PEGAWAI': 10,
+            'JURULATIH': 9
+        };
+
+        const selectPeranan = document.getElementById('reg_peranan');
+        if (!selectPeranan) return;
+
+        // Nyahdayakan (disable) option jika kuota penuh
+        Array.from(selectPeranan.options).forEach(option => {
+            const peranan = option.value;
+            if (limits[peranan] !== undefined && countMap[peranan] >= limits[peranan]) {
+                option.disabled = true;
+                // Hanya tambah teks (Penuh) jika belum ada
+                if (!option.textContent.includes('(Penuh)')) {
+                    option.textContent = `${option.textContent} (Penuh)`;
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error("Ralat menyemak ketersediaan peranan:", err);
+    }
+}
+
+// Panggil fungsi semasa DOM dimuatkan
+document.addEventListener('DOMContentLoaded', () => {
+    checkRoleAvailability();
+});
+
+
 async function loadSchools() {
     if (schoolsLoaded) return;
     try {
@@ -208,6 +264,8 @@ async function checkIC(ic) {
         } else {
             document.getElementById('reg_ic').value = ic;
             await loadSchools();
+            // Semak semula ketersediaan sebelum papar borang daftar
+            await checkRoleAvailability(); 
             showView('register');
             showToast("Rekod tidak ditemui. Sila daftar.", "info");
         }
@@ -270,6 +328,8 @@ async function registerUser(e) {
 
             if (count >= hadMaksimum) {
                 showToast(`Maaf, kuota pendaftaran ${peranan} telah penuh (${count}/${hadMaksimum}).`, "error");
+                // Refresh ketersediaan
+                await checkRoleAvailability();
                 showView('register');
                 return;
             }
