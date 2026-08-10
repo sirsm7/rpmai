@@ -206,7 +206,7 @@ async function loadDashboardStats() {
             .eq('peranan', 'GURU');
 
         document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 8`;
+        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 9`; // Updated to 9
         document.getElementById('sum_guru').innerHTML = `${guruCount || 0}`;
 
         document.getElementById('summary-cards').classList.remove('hidden-view');
@@ -353,14 +353,14 @@ async function fetchTableData() {
         if (jurErr) throw jurErr;
 
         document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 8`;
+        document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 9`; // Updated to 9
         document.getElementById('sum_guru').innerHTML = `${(guruData || []).length}`;
 
         let paddedPegawai = [...(pegData || [])];
         while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI', peranan: 'PEGAWAI' });
 
         let paddedJurulatih = [...(jurData || [])];
-        while(paddedJurulatih.length < 8) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' });
+        while(paddedJurulatih.length < 9) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' }); // Updated to 9
 
         currentData = [...paddedPegawai, ...paddedJurulatih, ...(guruData || [])];
 

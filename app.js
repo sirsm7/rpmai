@@ -258,7 +258,8 @@ async function registerUser(e) {
 
     try {
         if (peranan === 'PEGAWAI' || peranan === 'JURULATIH') {
-            const hadMaksimum = peranan === 'PEGAWAI' ? 10 : 8;
+            // Update: Trainer limit changed from 8 to 9
+            const hadMaksimum = peranan === 'PEGAWAI' ? 10 : 9;
             
             const { count, error: countError } = await supabaseClient
                 .from('edaftar_bengkel_ppdag')
