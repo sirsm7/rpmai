@@ -31,7 +31,7 @@ const subjectDatesMap = {
 };
 
 const absoluteDates = [
-    "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", 
+    "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23",
     "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13"
 ];
 
@@ -149,7 +149,7 @@ function getSmartDateRangeString(datesArray) {
     if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
 
     const sorted = [...datesArray].sort();
-    
+
     const isJulai = sorted.some(d => d.includes('-07-'));
     const isOgos = sorted.some(d => d.includes('-08-'));
 
@@ -206,7 +206,7 @@ async function loadDashboardStats() {
             .eq('peranan', 'GURU');
 
         document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 9`; // Updated to 9
+        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 9`; 
         document.getElementById('sum_guru').innerHTML = `${guruCount || 0}`;
 
         document.getElementById('summary-cards').classList.remove('hidden-view');
@@ -239,7 +239,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     document.getElementById('btn-sijil-pukal').disabled = true;
     document.getElementById('check-all-cert').disabled = true;
     document.getElementById('summary-cards').classList.add('hidden-view');
-    
+
     const btnSemak = document.getElementById('btn-semak-sekolah');
     if(btnSemak) btnSemak.classList.add('hidden-view');
 
@@ -251,7 +251,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
     const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
     const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-    
+
     if(btnSemakKuota) btnSemakKuota.classList.add('hidden-view');
     if(btnPukal1) btnPukal1.classList.add('hidden-view');
     if(btnPukal2) btnPukal2.classList.add('hidden-view');
@@ -353,14 +353,14 @@ async function fetchTableData() {
         if (jurErr) throw jurErr;
 
         document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 9`; // Updated to 9
+        document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 9`;
         document.getElementById('sum_guru').innerHTML = `${(guruData || []).length}`;
 
         let paddedPegawai = [...(pegData || [])];
         while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI', peranan: 'PEGAWAI' });
 
         let paddedJurulatih = [...(jurData || [])];
-        while(paddedJurulatih.length < 9) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' }); // Updated to 9
+        while(paddedJurulatih.length < 9) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' }); 
 
         currentData = [...paddedPegawai, ...paddedJurulatih, ...(guruData || [])];
 
@@ -368,7 +368,7 @@ async function fetchTableData() {
 
         if(currentData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
-            
+
             const btnSemak = document.getElementById('btn-semak-sekolah');
             if(btnSemak) btnSemak.classList.add('hidden-view');
 
@@ -377,13 +377,13 @@ async function fetchTableData() {
             const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
             const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
             const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-            
+
             if(btnSemakKuota) btnSemakKuota.classList.add('hidden-view');
             if(btnPukal1) btnPukal1.classList.add('hidden-view');
             if(btnPukal2) btnPukal2.classList.add('hidden-view');
             if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
             if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
-            
+
             return;
         }
 
@@ -391,7 +391,7 @@ async function fetchTableData() {
         btnPdf.disabled = false;
         btnSijilPukal.disabled = false;
         checkAll.disabled = false;
-        
+
         const btnSemak = document.getElementById('btn-semak-sekolah');
         if(btnSemak) btnSemak.classList.remove('hidden-view');
 
@@ -400,7 +400,7 @@ async function fetchTableData() {
         const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
         const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
         const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-        
+
         if (isSM && btnSemakKuota) {
             btnSemakKuota.classList.remove('hidden-view');
         } else if (btnSemakKuota) {
@@ -436,7 +436,7 @@ window.tapisSenarai = function(peranan) {
             renderTable();
             this.classList.add('hidden-view');
         };
-        
+
         const btnPdf = document.getElementById('btn-pdf');
         if (btnPdf && btnPdf.parentNode) {
             btnPdf.parentNode.insertBefore(btnReset, btnPdf.nextSibling);
@@ -503,7 +503,7 @@ function renderTable(filterPeranan = null) {
             layakSijil = hadir1 && hadir2;
         }
 
-        const checkboxHtml = layakSijil 
+        const checkboxHtml = layakSijil
             ? `<input type="checkbox" class="check-cert rounded text-blue-600 focus:ring-blue-500" value="${row.id}">`
             : `<input type="checkbox" disabled class="rounded text-gray-300 opacity-50 cursor-not-allowed" title="Belum cukup kehadiran">`;
 
@@ -561,8 +561,8 @@ window.toggleAttendance = async function(id, sesi, currentStatus) {
         const record = currentData.find(r => r.id === id);
         if(record) {
             record[`sesi_${sesi}_hadir`] = newStatus;
-            
-            renderTable(currentFilter); 
+
+            renderTable(currentFilter);
         }
     } catch (err) {
         console.error(err);
@@ -594,7 +594,7 @@ async function markBulkAttendance(sesi, isHadir) {
     const updatePromises = dataToUpdate.map(async (row) => {
         const role = row.peranan || 'GURU';
         const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
-        
+
         let updateColumn = '';
         if (sesi === 1) {
             updateColumn = isExempt ? `sesi_${conf.exemptS1}_hadir` : 'sesi_1_hadir';
@@ -614,7 +614,7 @@ async function markBulkAttendance(sesi, isHadir) {
             console.error(`Gagal kemaskini ID ${row.id}:`, error);
             throw error;
         }
-        
+
         row[updateColumn] = isHadir;
     });
 
@@ -828,7 +828,7 @@ window.bukaModalSemakKuota = function() {
 
     const conf = groupConfig[selGroup];
     const isSM = conf.label.includes('(SM)');
-    
+
     if (!isSM) {
         showMsg("Ralat", "Semakan kuota 3 peserta hanya untuk kumpulan Sekolah Menengah (SM).");
         return;
@@ -865,9 +865,9 @@ window.bukaModalSemakKuota = function() {
         kurangKuotaSchools.forEach((s, index) => {
             const li = document.createElement('li');
             li.className = 'p-3 hover:bg-red-50 flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-100 last:border-0';
-            
+
             const badgeWarna = s.jumlahDaftar === 0 ? 'bg-red-100 text-red-800 border-red-200' : 'bg-orange-100 text-orange-800 border-orange-200';
-            
+
             li.innerHTML = `
                 <div>
                     <span class="font-semibold text-gray-800">${index + 1}. ${s.nama}</span>
@@ -941,16 +941,16 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     if (currentFilter) {
         dataToExport = currentData.filter(row => row.peranan === currentFilter || row.roleLabel === currentFilter);
     }
-    
+
     const fullyAttendedData = dataToExport.filter(row => {
         if(row.isDummy) return false;
-        
+
         const role = row.peranan || 'GURU';
         const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
 
         const hadir1 = isExempt ? row[`sesi_${conf.exemptS1}_hadir`] : row.sesi_1_hadir;
         const hadir2 = isExempt ? row[`sesi_${conf.exemptS2}_hadir`] : row.sesi_2_hadir;
-        
+
         return hadir1 && hadir2;
     });
 
@@ -1055,7 +1055,7 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
         const fontB64 = await getCursiveFontBase64();
 
         const finalDoc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-        
+
         if (fontB64) {
             finalDoc.addFileToVFS('Cursive.ttf', fontB64);
             finalDoc.addFont('Cursive.ttf', 'Cursive', 'normal');
@@ -1063,7 +1063,7 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
 
         for (let i = 0; i < checkedBoxes.length; i++) {
             if (i > 0) finalDoc.addPage();
-            
+
             const recordId = checkedBoxes[i].value;
             const record = currentData.find(r => r.id === recordId);
             if (!record) continue;
@@ -1083,7 +1083,7 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
             } else {
                 const t1 = formatDateDisplay(record.sesi_1_tarikh);
                 const t2 = formatDateDisplay(record.sesi_2_tarikh);
-                paparanTarikh = `${t1} hingga ${t2}`; 
+                paparanTarikh = `${t1} hingga ${t2}`;
             }
 
             const centerX = finalDoc.internal.pageSize.getWidth() / 2;
@@ -1094,15 +1094,15 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
 
             if (fontB64) {
                 finalDoc.setFont("Cursive", "normal");
-                finalDoc.setFontSize(80); 
+                finalDoc.setFontSize(80);
             } else {
                 finalDoc.setFont("helvetica", "bolditalic");
-                finalDoc.setFontSize(42); 
+                finalDoc.setFontSize(42);
             }
 
             const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
-            finalDoc.setTextColor(220, 38, 38); 
-            finalDoc.text(sijilTitle, centerX, 90, { align: 'center' }); 
+            finalDoc.setTextColor(220, 38, 38);
+            finalDoc.text(sijilTitle, centerX, 90, { align: 'center' });
 
             finalDoc.setFont("helvetica", "normal");
             finalDoc.setFontSize(14);
@@ -1145,7 +1145,7 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
 
         const selGroup = document.getElementById('filter_subjek').value;
         const groupLabel = groupConfig[selGroup] ? groupConfig[selGroup].label.replace(/[^a-zA-Z0-9]/g, '_') : 'Pukal';
-        
+
         finalDoc.save(`Sijil_Pukal_${groupLabel}.pdf`);
 
         showMsg("Berjaya", `${checkedBoxes.length} sijil telah digabungkan dan dimuat turun.`);

@@ -19,14 +19,14 @@ const subjectDatesMap = {
 };
 
 const absoluteDates = [
-    "2026-07-20", 
-    "2026-07-21", 
-    "2026-07-22", 
-    "2026-07-23", 
-    "2026-08-10", 
-    "2026-08-11", 
-    "2026-08-12", 
-    "2026-08-13"  
+    "2026-07-20",
+    "2026-07-21",
+    "2026-07-22",
+    "2026-07-23",
+    "2026-08-10",
+    "2026-08-11",
+    "2026-08-12",
+    "2026-08-13"
 ];
 
 const WORKSHOP_LAT = 2.3448043344238445;
@@ -34,7 +34,7 @@ const WORKSHOP_LNG = 102.1049791621177;
 const MAX_RADIUS_METERS = 200;
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; 
+    const R = 6371e3;
     const p1 = lat1 * Math.PI / 180;
     const p2 = lat2 * Math.PI / 180;
     const deltaP = (lat2 - lat1) * Math.PI / 180;
@@ -45,7 +45,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
               Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c; 
+    return R * c;
 }
 
 let tomSelectInstance = null;
@@ -56,7 +56,7 @@ let schoolMap = {};
 function showView(viewName) {
     Object.values(views).forEach(v => v.classList.add('hidden-view'));
     views[viewName].classList.remove('hidden-view');
-    
+
     const adminContainer = document.getElementById('admin-link-container');
     if(viewName === 'check') {
         adminContainer.classList.remove('hidden-view');
@@ -73,15 +73,15 @@ function showLoading(text = "Sila tunggu...") {
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast-container');
     const msg = document.getElementById('toast-message');
-    
+
     toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 transition-all duration-300 z-50 rounded-md shadow-lg px-6 py-3 text-white font-medium`;
-    
+
     if(type === 'success') toast.classList.add('bg-green-600');
     else if(type === 'error') toast.classList.add('bg-red-600');
     else toast.classList.add('bg-blue-600');
 
     msg.textContent = message;
-    
+
     setTimeout(() => {
         toast.classList.remove('-translate-y-full', 'opacity-0');
         toast.classList.add('translate-y-0', 'opacity-100');
@@ -105,10 +105,8 @@ function getSmartDateRangeString(datesArray) {
     if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
 
     const sorted = [...datesArray].sort();
-    
-    // Check if it's Julai (20-23)
+
     const isJulai = sorted.some(d => d.includes('-07-'));
-    // Check if it's Ogos (10-13)
     const isOgos = sorted.some(d => d.includes('-08-'));
 
     let res = [];
@@ -146,7 +144,6 @@ function isDateArrived(dateString) {
     return todayDate >= targetDate;
 }
 
-// FUNGSI BAHARU: Semak ketersediaan peranan
 async function checkRoleAvailability() {
     try {
         const { data, error } = await supabaseClient
@@ -155,11 +152,9 @@ async function checkRoleAvailability() {
 
         if (error) throw error;
 
-        // Kira bilangan pendaftaran untuk setiap peranan
         const countMap = {
             'PEGAWAI': 0,
             'JURULATIH': 0
-            // Tambah peranan lain di sini jika ada had
         };
 
         if (data) {
@@ -170,7 +165,6 @@ async function checkRoleAvailability() {
             });
         }
 
-        // Tetapkan had (berdasarkan logik asal)
         const limits = {
             'PEGAWAI': 10,
             'JURULATIH': 9
@@ -179,12 +173,10 @@ async function checkRoleAvailability() {
         const selectPeranan = document.getElementById('reg_peranan');
         if (!selectPeranan) return;
 
-        // Nyahdayakan (disable) option jika kuota penuh
         Array.from(selectPeranan.options).forEach(option => {
             const peranan = option.value;
             if (limits[peranan] !== undefined && countMap[peranan] >= limits[peranan]) {
                 option.disabled = true;
-                // Hanya tambah teks (Penuh) jika belum ada
                 if (!option.textContent.includes('(Penuh)')) {
                     option.textContent = `${option.textContent} (Penuh)`;
                 }
@@ -196,11 +188,9 @@ async function checkRoleAvailability() {
     }
 }
 
-// Panggil fungsi semasa DOM dimuatkan
 document.addEventListener('DOMContentLoaded', () => {
     checkRoleAvailability();
 });
-
 
 async function loadSchools() {
     if (schoolsLoaded) return;
@@ -214,7 +204,7 @@ async function loadSchools() {
 
         const select = document.getElementById('reg_sekolah');
         select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
-        
+
         if(data && data.length > 0){
             data.forEach(s => {
                 schoolMap[s.kod_sekolah] = s.nama_sekolah;
@@ -226,7 +216,7 @@ async function loadSchools() {
         }
 
         if(tomSelectInstance) tomSelectInstance.destroy();
-        
+
         tomSelectInstance = new TomSelect("#reg_sekolah", {
             create: false,
             sortField: {
@@ -264,8 +254,7 @@ async function checkIC(ic) {
         } else {
             document.getElementById('reg_ic').value = ic;
             await loadSchools();
-            // Semak semula ketersediaan sebelum papar borang daftar
-            await checkRoleAvailability(); 
+            await checkRoleAvailability();
             showView('register');
             showToast("Rekod tidak ditemui. Sila daftar.", "info");
         }
@@ -311,14 +300,13 @@ async function registerUser(e) {
     }
 
     const namaSekolah = schoolMap[kodSekolah];
-    
+
     showLoading("Menyimpan pendaftaran...");
 
     try {
         if (peranan === 'PEGAWAI' || peranan === 'JURULATIH') {
-            // Update: Trainer limit changed from 8 to 9
             const hadMaksimum = peranan === 'PEGAWAI' ? 10 : 9;
-            
+
             const { count, error: countError } = await supabaseClient
                 .from('edaftar_bengkel_ppdag')
                 .select('*', { count: 'exact', head: true })
@@ -328,7 +316,6 @@ async function registerUser(e) {
 
             if (count >= hadMaksimum) {
                 showToast(`Maaf, kuota pendaftaran ${peranan} telah penuh (${count}/${hadMaksimum}).`, "error");
-                // Refresh ketersediaan
                 await checkRoleAvailability();
                 showView('register');
                 return;
@@ -359,13 +346,13 @@ async function registerUser(e) {
         if (error) throw error;
 
         currentRecord = data;
-        
+
         document.getElementById('register-form').reset();
         document.getElementById('subjek_container').classList.remove('hidden-view');
         document.getElementById('reg_subjek').required = true;
 
         if(tomSelectInstance) tomSelectInstance.clear();
-        
+
         setupDashboard();
         showView('dashboard');
         showToast("Pendaftaran berjaya", "success");
@@ -381,9 +368,9 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
         showToast("Maaf, tarikh bengkel belum tiba. Pengesahan ditutup.", "error");
         return;
     }
-    
+
     const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
-    
+
     if (!isExempt) {
         if (!navigator.geolocation) {
             showToast("Sistem GPS tidak disokong oleh pelayar anda.", "error");
@@ -391,14 +378,14 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
         }
 
         showLoading("Mengesahkan lokasi anda...");
-        
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
-                
+
                 const distance = calculateDistance(userLat, userLng, WORKSHOP_LAT, WORKSHOP_LNG);
-                
+
                 if (distance <= MAX_RADIUS_METERS) {
                     markAttendance(sesi);
                 } else {
@@ -436,9 +423,9 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
 
 async function markAttendance(sesi) {
     if(!currentRecord) return;
-    
+
     showLoading("Mengesahkan kehadiran...");
-    
+
     const updateData = {};
     updateData[`sesi_${sesi}_hadir`] = true;
 
@@ -519,7 +506,7 @@ async function createPDFDocument() {
     }
 
     const { jsPDF } = window.jspdf;
-    
+
     const doc = new jsPDF({
         orientation: 'p',
         unit: 'mm',
@@ -546,14 +533,14 @@ async function createPDFDocument() {
 
     if (fontB64) {
         doc.setFont("Cursive", "normal");
-        doc.setFontSize(80); 
+        doc.setFontSize(80);
     } else {
         doc.setFont("helvetica", "bolditalic");
-        doc.setFontSize(42); 
+        doc.setFontSize(42);
     }
-    
-    doc.setTextColor(220, 38, 38); 
-    doc.text(sijilTitle, centerX, 90, { align: 'center' }); 
+
+    doc.setTextColor(220, 38, 38);
+    doc.text(sijilTitle, centerX, 90, { align: 'center' });
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
@@ -564,7 +551,7 @@ async function createPDFDocument() {
     doc.setFontSize(20);
     doc.setTextColor(17, 24, 39);
     doc.text(currentRecord.nama_penuh, centerX, 130, { align: 'center' });
-    
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
     doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 140, { align: 'center' });
@@ -582,19 +569,19 @@ async function createPDFDocument() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(14);
     doc.setTextColor(75, 85, 99);
-    
+
     let paparanPeranan = "";
     if (peranan === 'GURU') {
         paparanPeranan = "sebagai PESERTA";
     } else {
         paparanPeranan = `sebagai ${peranan}`;
     }
-    
+
     doc.text(paparanPeranan, centerX, 193, { align: 'center' });
 
     doc.setFontSize(12);
     doc.text("pada", centerX, 205, { align: 'center' });
-    
+
     doc.text(paparanTarikh, centerX, 213, { align: 'center', maxWidth: 170 });
 
     if (signData) {
@@ -606,11 +593,11 @@ async function createPDFDocument() {
 
 async function generateCertificate() {
     const isExempt = currentRecord.peranan === 'PEGAWAI' || currentRecord.peranan === 'JURULATIH';
-    
+
     if (!isExempt) {
         const isSesi1Hadir = currentRecord.sesi_1_hadir === true;
         const isSesi2Hadir = currentRecord.sesi_2_hadir === true;
-        
+
         if (!isSesi1Hadir || !isSesi2Hadir) {
             showToast("Sijil hanya boleh dimuat turun jika anda hadir kedua-dua sesi.", "error");
             return;
@@ -650,11 +637,11 @@ function setupDashboard() {
 
     document.getElementById('dash_nama').textContent = currentRecord.nama_penuh;
     document.getElementById('dash_ic').textContent = currentRecord.ic_no;
-    
+
     const peranan = currentRecord.peranan || 'GURU';
     document.getElementById('dash_peranan').textContent = peranan;
     document.getElementById('dash_sekolah').textContent = `${currentRecord.kod_sekolah} - ${currentRecord.nama_sekolah}`;
-    
+
     const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
 
     if (isExempt) {
@@ -666,29 +653,29 @@ function setupDashboard() {
 
     const sessionsContainer = document.getElementById('sessions_container');
     sessionsContainer.innerHTML = '';
-    
+
     const totalSessions = isExempt ? 8 : 2;
     let allAttended = true;
-    
+
     let attendedDates = [];
 
     for (let i = 1; i <= totalSessions; i++) {
         const isAttended = currentRecord[`sesi_${i}_hadir`];
         if (!isAttended) allAttended = false;
-        
+
         const tarikhDisplay = isExempt ? formatDateDisplay(absoluteDates[i-1]) : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
         const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
-        
+
         if (isExempt && isAttended) {
              attendedDates.push(rawTarikh);
         }
 
         const div = document.createElement('div');
         div.className = "border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm";
-        
+
         const infoDiv = document.createElement('div');
         infoDiv.innerHTML = `<p class="font-bold text-gray-800">Sesi ${i}</p><p class="text-sm text-gray-500">${tarikhDisplay}</p>`;
-        
+
         const btn = document.createElement('button');
         if (isAttended) {
             btn.textContent = "Telah Hadir";
@@ -699,16 +686,16 @@ function setupDashboard() {
             btn.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
             btn.onclick = () => handleAttendanceClick(i, rawTarikh, peranan);
         }
-        
+
         div.appendChild(infoDiv);
         div.appendChild(btn);
         sessionsContainer.appendChild(div);
     }
-    
+
     const sijilContainer = document.getElementById('sijil_container');
     const sijilOptions = document.getElementById('sijil_options_container');
     const sijilCheckboxes = document.getElementById('sijil_checkboxes');
-    
+
     sijilContainer.classList.remove('hidden-view');
     sijilCheckboxes.innerHTML = '';
 
@@ -766,7 +753,7 @@ document.getElementById('btn-batal-reg').addEventListener('click', () => {
     document.getElementById('ic_check').value = '';
     document.getElementById('reg_tarikh_info').textContent = '';
     document.getElementById('register-form').reset();
-    
+
     document.getElementById('subjek_container').classList.remove('hidden-view');
     document.getElementById('reg_subjek').required = true;
 
