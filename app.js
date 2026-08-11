@@ -96,7 +96,7 @@ function showToast(message, type = 'success') {
 function formatDateDisplay(dateString) {
     if(!dateString) return "";
     const [y, m, d] = dateString.split('-');
-    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
     return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
 }
 
@@ -105,34 +105,35 @@ function getSmartDateRangeString(datesArray) {
     if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
 
     const sorted = [...datesArray].sort();
-
-    const isJulai = sorted.some(d => d.includes('-07-'));
-    const isOgos = sorted.some(d => d.includes('-08-'));
+    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+    
+    let groups = {};
+    sorted.forEach(d => {
+        const [y, m, day] = d.split('-');
+        const key = `${y}-${m}`;
+        if(!groups[key]) groups[key] = [];
+        groups[key].push(parseInt(day));
+    });
 
     let res = [];
-    if (isJulai) {
-        const julaiDates = sorted.filter(d => d.includes('-07-'));
-        if (julaiDates.length > 1) {
-             const first = julaiDates[0].split('-')[2];
-             const last = julaiDates[julaiDates.length - 1].split('-')[2];
-             res.push(`${parseInt(first)} Julai hingga ${parseInt(last)} Julai 2026`);
-        } else if (julaiDates.length === 1) {
-             res.push(formatDateDisplay(julaiDates[0]));
+    for(const key in groups) {
+        const [y, m] = key.split('-');
+        const days = groups[key];
+        let daysStr = "";
+        
+        if(days.length === 1) {
+            daysStr = days[0].toString();
+        } else if (days.length === 2) {
+            daysStr = `${days[0]} dan ${days[1]}`;
+        } else {
+            const lastDay = days.pop();
+            daysStr = `${days.join(', ')} dan ${lastDay}`;
         }
+        
+        res.push(`${daysStr} ${months[parseInt(m)-1]} ${y}`);
     }
 
-    if (isOgos) {
-        const ogosDates = sorted.filter(d => d.includes('-08-'));
-        if (ogosDates.length > 1) {
-             const first = ogosDates[0].split('-')[2];
-             const last = ogosDates[ogosDates.length - 1].split('-')[2];
-             res.push(`${parseInt(first)} Ogos hingga ${parseInt(last)} Ogos 2026`);
-        } else if (ogosDates.length === 1) {
-             res.push(formatDateDisplay(ogosDates[0]));
-        }
-    }
-
-    return res.join(' dan ');
+    return res.join(' serta ');
 }
 
 function isDateArrived(dateString) {
@@ -199,7 +200,7 @@ function filterAvailableSubjects() {
     const todayString = `${year}-${month}-${day}`;
 
     Array.from(subjectSelect.options).forEach(option => {
-        if (!option.value) return; 
+        if (!option.value) return;
 
         const dates = subjectDatesMap[option.value];
         if (dates) {
@@ -527,9 +528,7 @@ async function createPDFDocument() {
         });
         paparanTarikh = getSmartDateRangeString(tarikhMentah);
     } else {
-        const t1 = formatDateDisplay(currentRecord.sesi_1_tarikh);
-        const t2 = formatDateDisplay(currentRecord.sesi_2_tarikh);
-        paparanTarikh = `${t1} hingga ${t2}`;
+        paparanTarikh = getSmartDateRangeString([currentRecord.sesi_1_tarikh, currentRecord.sesi_2_tarikh]);
     }
 
     const { jsPDF } = window.jspdf;

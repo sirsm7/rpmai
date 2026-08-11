@@ -141,7 +141,7 @@ const masterSekolah = [
 function formatDateDisplay(dateString) {
     if(!dateString) return "";
     const [y, m, d] = dateString.split('-');
-    const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
     return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
 }
 
@@ -150,34 +150,35 @@ function getSmartDateRangeString(datesArray) {
     if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
 
     const sorted = [...datesArray].sort();
-
-    const isJulai = sorted.some(d => d.includes('-07-'));
-    const isOgos = sorted.some(d => d.includes('-08-'));
+    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+    
+    let groups = {};
+    sorted.forEach(d => {
+        const [y, m, day] = d.split('-');
+        const key = `${y}-${m}`;
+        if(!groups[key]) groups[key] = [];
+        groups[key].push(parseInt(day));
+    });
 
     let res = [];
-    if (isJulai) {
-        const julaiDates = sorted.filter(d => d.includes('-07-'));
-        if (julaiDates.length > 1) {
-             const first = julaiDates[0].split('-')[2];
-             const last = julaiDates[julaiDates.length - 1].split('-')[2];
-             res.push(`${parseInt(first)} Julai hingga ${parseInt(last)} Julai 2026`);
-        } else if (julaiDates.length === 1) {
-             res.push(formatDateDisplay(julaiDates[0]));
+    for(const key in groups) {
+        const [y, m] = key.split('-');
+        const days = groups[key];
+        let daysStr = "";
+        
+        if(days.length === 1) {
+            daysStr = days[0].toString();
+        } else if (days.length === 2) {
+            daysStr = `${days[0]} dan ${days[1]}`;
+        } else {
+            const lastDay = days.pop();
+            daysStr = `${days.join(', ')} dan ${lastDay}`;
         }
+        
+        res.push(`${daysStr} ${months[parseInt(m)-1]} ${y}`);
     }
 
-    if (isOgos) {
-        const ogosDates = sorted.filter(d => d.includes('-08-'));
-        if (ogosDates.length > 1) {
-             const first = ogosDates[0].split('-')[2];
-             const last = ogosDates[ogosDates.length - 1].split('-')[2];
-             res.push(`${parseInt(first)} Ogos hingga ${parseInt(last)} Ogos 2026`);
-        } else if (ogosDates.length === 1) {
-             res.push(formatDateDisplay(ogosDates[0]));
-        }
-    }
-
-    return res.join(' dan ');
+    return res.join(' serta ');
 }
 
 function showMsg(title, body) {
@@ -285,7 +286,7 @@ async function loadSchools() {
                 select.appendChild(option);
             });
         }
-        
+
         schoolMap["M030"] = "PEJABAT PENDIDIKAN DAERAH ALOR GAJAH";
         const ppdOption = document.createElement('option');
         ppdOption.value = "M030";
@@ -998,12 +999,12 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     const tableData = fullyAttendedData.map((row, i) => {
         const role = row.peranan || 'GURU';
         let namaPapar = row.nama_penuh;
-        
+
         // Pengecualian label bagi sekolah PPDAG (M030)
         if (row.kod_sekolah !== 'M030') {
             namaPapar = `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`;
         }
-        
+
         return [
             i + 1,
             namaPapar,
@@ -1095,9 +1096,7 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
                 }
                 paparanTarikh = getSmartDateRangeString(attendedDatesRaw);
             } else {
-                const t1 = formatDateDisplay(record.sesi_1_tarikh);
-                const t2 = formatDateDisplay(record.sesi_2_tarikh);
-                paparanTarikh = `${t1} hingga ${t2}`;
+                paparanTarikh = getSmartDateRangeString([record.sesi_1_tarikh, record.sesi_2_tarikh]);
             }
 
             const centerX = finalDoc.internal.pageSize.getWidth() / 2;
