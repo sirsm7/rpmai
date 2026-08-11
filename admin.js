@@ -1,9 +1,9 @@
-const SUPABASE_URL = 'https://app.tech4ag.my';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { ADMIN_PWD, groupConfig, subjectDatesMap, absoluteDates, masterSekolah } from './config.js';
+import { getSchoolsData, getAdminDashboardStats, getAdminTableData, deleteRecord, updateRecord } from './data.js';
+import { generateBulkCertificates, generateAttendanceReport } from './pdf-service.js';
+import { getSmartDateRangeString, formatDateDisplay } from './utils.js';
 
-const ADMIN_PWD = "ppdag@12345";
-
+// State tempatan aplikasi Admin
 let currentData = [];
 let schoolsLoaded = false;
 let schoolMap = {};
@@ -11,269 +11,28 @@ let tomSelectInstance = null;
 
 let editingId = null;
 let deletingId = null;
-
 let currentFilter = null;
 
-const groupConfig = {
-    "G1": { label: "MATEMATIK (SR)", subjects: ["MATEMATIK (SR)"], d1: "20 Julai 2026", d2: "21 Julai 2026", exemptS1: 1, exemptS2: 2 },
-    "G2": { label: "SAINS (SR)", subjects: ["SAINS (SR)"], d1: "22 Julai 2026", d2: "23 Julai 2026", exemptS1: 3, exemptS2: 4 },
-    "G3": { label: "MATEMATIK & SAINS KOMPUTER (SM)", subjects: ["MATEMATIK (SM)", "SAINS KOMPUTER (SM)"], d1: "10 Ogos 2026", d2: "11 Ogos 2026", exemptS1: 5, exemptS2: 6 },
-    "G4": { label: "SAINS & SAINS TULEN (SM)", subjects: ["SAINS (SM)", "SAINS TULEN (SM)"], d1: "12 Ogos 2026", d2: "13 Ogos 2026", exemptS1: 7, exemptS2: 8 }
-};
-
-const subjectDatesMap = {
-    "MATEMATIK (SR)": { s1: "2026-07-20", s2: "2026-07-21" },
-    "SAINS (SR)": { s1: "2026-07-22", s2: "2026-07-23" },
-    "MATEMATIK (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
-    "SAINS KOMPUTER (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
-    "SAINS (SM)": { s1: "2026-08-12", s2: "2026-08-13" },
-    "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
-};
-
-const absoluteDates = [
-    "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23",
-    "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13"
-];
-
-const masterSekolah = [
-    { kod: "MBA0001", nama: "SEKOLAH KEBANGSAAN MASJID TANAH", jenis: "SK" },
-    { kod: "MBA0002", nama: "SEKOLAH KEBANGSAAN TANJUNG BIDARA", jenis: "SK" },
-    { kod: "MBA0003", nama: "SEKOLAH KEBANGSAAN OTHMAN SYAWAL", jenis: "SK" },
-    { kod: "MBA0004", nama: "SEKOLAH KEBANGSAAN BUKIT BERINGIN", jenis: "SK" },
-    { kod: "MBA0005", nama: "SEKOLAH KEBANGSAAN RAMUAN CHINA BESAR", jenis: "SK" },
-    { kod: "MBA0006", nama: "SEKOLAH KEBANGSAAN RAMUAN CHINA KECHIL", jenis: "SK" },
-    { kod: "MBA0007", nama: "SEKOLAH KEBANGSAAN AYER LIMAU", jenis: "SK" },
-    { kod: "MBA0008", nama: "SEKOLAH KEBANGSAAN KUALA LINGGI", jenis: "SK" },
-    { kod: "MBA0009", nama: "SEKOLAH KEBANGSAAN PENGKALAN BALAK", jenis: "SK" },
-    { kod: "MBA0010", nama: "SEKOLAH KEBANGSAAN DURIAN DAUN (K)", jenis: "SK" },
-    { kod: "MBA0011", nama: "SEKOLAH KEBANGSAAN LUBOK REDAN", jenis: "SK" },
-    { kod: "MBA0012", nama: "SEKOLAH KEBANGSAAN JERAM", jenis: "SK" },
-    { kod: "MBA0013", nama: "SEKOLAH KEBANGSAAN AIR JERNIH", jenis: "SK" },
-    { kod: "MBA0014", nama: "SEKOLAH KEBANGSAAN KAMPUNG TENGAH", jenis: "SK" },
-    { kod: "MBA0015", nama: "SEKOLAH KEBANGSAAN SUNGAI TUANG", jenis: "SK" },
-    { kod: "MBA0016", nama: "SEKOLAH KEBANGSAAN TELOK BEREMBANG", jenis: "SK" },
-    { kod: "MBA0017", nama: "SEKOLAH KEBANGSAAN SUNGAI JERNIH", jenis: "SK" },
-    { kod: "MBA0018", nama: "SEKOLAH KEBANGSAAN RANTAU PANJANG", jenis: "SK" },
-    { kod: "MBA0020", nama: "SEKOLAH KEBANGSAAN PADANG SEBANG", jenis: "SK" },
-    { kod: "MBA0021", nama: "SEKOLAH KEBANGSAAN AYER PA'ABAS", jenis: "SK" },
-    { kod: "MBA0022", nama: "SEKOLAH KEBANGSAAN SIMPANG EMPAT", jenis: "SK" },
-    { kod: "MBA0023", nama: "SEKOLAH KEBANGSAAN PULAU SEBANG", jenis: "SK" },
-    { kod: "MBA0024", nama: "SEKOLAH KEBANGSAAN MELEKEK", jenis: "SK" },
-    { kod: "MBA0025", nama: "SEKOLAH KEBANGSAAN GANUN", jenis: "SK" },
-    { kod: "MBA0026", nama: "SEKOLAH KEBANGSAAN PARIT MELANA", jenis: "SK" },
-    { kod: "MBA0027", nama: "SEKOLAH KEBANGSAAN SUNGAI PETAI", jenis: "SK" },
-    { kod: "MBA0028", nama: "SEKOLAH KEBANGSAAN SUNGAI SIPUT", jenis: "SK" },
-    { kod: "MBA0029", nama: "SEKOLAH KEBANGSAAN MELAKA PINDAH", jenis: "SK" },
-    { kod: "MBA0030", nama: "SEKOLAH KEBANGSAAN PEGOH", jenis: "SK" },
-    { kod: "MBA0031", nama: "SEKOLAH KEBANGSAAN BERISU", jenis: "SK" },
-    { kod: "MBA0032", nama: "SEKOLAH KEBANGSAAN LENDU", jenis: "SK" },
-    { kod: "MBA0033", nama: "SEKOLAH KEBANGSAAN BELIMBING DALAM", jenis: "SK" },
-    { kod: "MBA0034", nama: "SEKOLAH KEBANGSAAN RUMBIA", jenis: "SK" },
-    { kod: "MBA0035", nama: "SEKOLAH KEBANGSAAN SUNGAI BULOH", jenis: "SK" },
-    { kod: "MBA0036", nama: "SEKOLAH KEBANGSAAN CHERANA PUTEH", jenis: "SK" },
-    { kod: "MBA0037", nama: "SEKOLAH KEBANGSAAN TEBONG", jenis: "SK" },
-    { kod: "MBA0038", nama: "SEKOLAH KEBANGSAAN KEMUNING", jenis: "SK" },
-    { kod: "MBA0039", nama: "SEKOLAH KEBANGSAAN MENGGONG", jenis: "SK" },
-    { kod: "MBA0040", nama: "SEKOLAH KEBANGSAAN HUTAN PERCHA", jenis: "SK" },
-    { kod: "MBA0041", nama: "SEKOLAH KEBANGSAAN DURIAN TUNGGAL", jenis: "SK" },
-    { kod: "MBA0042", nama: "SEKOLAH KEBANGSAAN KEM TERENDAK II", jenis: "SK" },
-    { kod: "MBA0043", nama: "SEKOLAH KEBANGSAAN GANGSA", jenis: "SK" },
-    { kod: "MBA0044", nama: "SEKOLAH KEBANGSAAN LESONG BATU", jenis: "SK" },
-    { kod: "MBA0045", nama: "SEKOLAH KEBANGSAAN DEMANG TAHA", jenis: "SK" },
-    { kod: "MBB0041", nama: "SEKOLAH KEBANGSAAN ALOR GAJAH 1", jenis: "SK" },
-    { kod: "MBB0042", nama: "SEKOLAH KEBANGSAAN DATO' NANING", jenis: "SK" },
-    { kod: "MBB0043", nama: "SEKOLAH KEBANGSAAN DATUK TAMBICHIK KARIM", jenis: "SK" },
-    { kod: "MBB0044", nama: "SEKOLAH KEBANGSAAN SRI LAKSAMANA", jenis: "SK" },
-    { kod: "MBC0046", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) PAY CHEE", jenis: "SJKC" },
-    { kod: "MBC0047", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) ALOR GAJAH", jenis: "SJKC" },
-    { kod: "MBC0048", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) SANN YUH", jenis: "SJKC" },
-    { kod: "MBC0049", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) PENG MIN", jenis: "SJKC" },
-    { kod: "MBC0050", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) SIN WAH", jenis: "SJKC" },
-    { kod: "MBC0051", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) KIOW MIN", jenis: "SJKC" },
-    { kod: "MBC0052", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) MACHAP BARU", jenis: "SJKC" },
-    { kod: "MBC0053", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) MACHAP UMBOO", jenis: "SJKC" },
-    { kod: "MBC0054", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) TABOH NANING", jenis: "SJKC" },
-    { kod: "MBC0055", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) LENDU", jenis: "SJKC" },
-    { kod: "MBC0056", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) KHIAK YEW", jenis: "SJKC" },
-    { kod: "MBC0057", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) MASJID TANAH", jenis: "SJKC" },
-    { kod: "MBC0058", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) YOK SIN", jenis: "SJKC" },
-    { kod: "MBC0059", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) PAYA MENGKUANG", jenis: "SJKC" },
-    { kod: "MBC0060", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) SIN MIN", jenis: "SJKC" },
-    { kod: "MBC0061", nama: "SEKOLAH JENIS KEBANGSAAN (CINA) CHABAU", jenis: "SJKC" },
-    { kod: "MBD0061", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) ALOR GAJAH", jenis: "SJKT" },
-    { kod: "MBD0062", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) DURIAN TUNGGAL", jenis: "SJKT" },
-    { kod: "MBD0063", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) RUMBIA", jenis: "SJKT" },
-    { kod: "MBD0064", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LADANG GADEK", jenis: "SJKT" },
-    { kod: "MBD0066", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) KEMUNING (H/D)", jenis: "SJKT" },
-    { kod: "MBD0067", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LDG KEMUNING KRU DIVISION", jenis: "SJKT" },
-    { kod: "MBD0068", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) PULAU SEBANG", jenis: "SJKT" },
-    { kod: "MBD0069", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LDG SG BARU (H/D)", jenis: "SJKT" },
-    { kod: "MBD0070", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) LDG TEBONG", jenis: "SJKT" },
-    { kod: "MBD0097", nama: "SEKOLAH JENIS KEBANGSAAN (TAMIL) PEKAN TEBONG", jenis: "SJKT" },
-    { kod: "MBE0045", nama: "SEKOLAH KEBANGSAAN KEM TERENDAK 1", jenis: "SK" },
-    { kod: "MCT0001", nama: "SEKOLAH RENDAH ARAB (JAIM) AL-FALAH", jenis: "SR SABK" },
-    { kod: "MCT0002", nama: "SEKOLAH RENDAH ARAB (JAIM) AL-FAIZIN", jenis: "SR SABK" },
-    { kod: "MEA0071", nama: "SEKOLAH MENENGAH KEBANGSAAN GHAFAR BABA", jenis: "SMK" },
-    { kod: "MEA0072", nama: "SEKOLAH MENENGAH KEBANGSAAN DATO' HAJI TALIB KARIM", jenis: "SMK" },
-    { kod: "MEA0073", nama: "SEKOLAH MENENGAH KEBANGSAAN RAHMAT", jenis: "SMK" },
-    { kod: "MEA0074", nama: "SEKOLAH MENENGAH KEBANGSAAN ADE PUTRA", jenis: "SMK" },
-    { kod: "MEA0075", nama: "SEKOLAH MENENGAH KEBANGSAAN NANING", jenis: "SMK" },
-    { kod: "MEA0095", nama: "SEKOLAH MENENGAH KEBANGSAAN LUBOK CHINA", jenis: "SMK" },
-    { kod: "MEA0099", nama: "SEKOLAH MENENGAH KEBANGSAAN HANG KASTURI", jenis: "SMK" },
-    { kod: "MEA0100", nama: "SEKOLAH MENENGAH KEBANGSAAN SUNGAI UDANG", jenis: "SMK" },
-    { kod: "MEA0101", nama: "SEKOLAH MENENGAH KEBANGSAAN DURIAN TUNGGAL", jenis: "SMK" },
-    { kod: "MEA0102", nama: "SEKOLAH MENENGAH KEBANGSAAN TEBONG", jenis: "SMK" },
-    { kod: "MEA0103", nama: "SEKOLAH MENENGAH SAINS DATUK SETIA ABDUL GHANI ALI", jenis: "SBP" },
-    { kod: "MEB0077", nama: "SEKOLAH MENENGAH KEBANGSAAN SERI PENGKALAN", jenis: "SMK" },
-    { kod: "MEB0078", nama: "SEKOLAH MENENGAH KEBANGSAAN PULAU SEBANG", jenis: "SMK" },
-    { kod: "MEB0079", nama: "SEKOLAH MENENGAH KEBANGSAAN SULTAN ALAUDDIN", jenis: "SMK" },
-    { kod: "MEE0074", nama: "SEKOLAH MENENGAH KEBANGSAAN SULTAN MANSOR SHAH", jenis: "SMK" },
-    { kod: "MEE0075", nama: "SEKOLAH MENENGAH KEBANGSAAN DATO' DOL SAID", jenis: "SMK" },
-    { kod: "MEE0094", nama: "SEKOLAH MENENGAH KEBANGSAAN KEM TERENDAK", jenis: "SMK" },
-    { kod: "MFT0001", nama: "SEKOLAH MENENGAH AGAMA AL-EHYA AL-KARIM", jenis: "SM SABK" },
-    { kod: "MFT0002", nama: "SEKOLAH MENENGAH AGAMA (JAIM) AL-ASYRAF", jenis: "SM SABK" },
-    { kod: "MFT0003", nama: "SEKOLAH MENENGAH AGAMA (JAIM) DARUL FALAH", jenis: "SM SABK" },
-    { kod: "MFT0004", nama: "SEKOLAH MENENGAH IMTIAZ ULUL ALBAB MELAKA", jenis: "SM SABK" },
-    { kod: "MHA0001", nama: "KOLEJ VOKASIONAL DATUK SERI MOHD. ZIN", jenis: "KV" },
-    { kod: "M030", nama: "PEJABAT PENDIDIKAN DAERAH ALOR GAJAH", jenis: "PPD" }
-];
-
-function formatDateDisplay(dateString) {
-    if(!dateString) return "";
-    const [y, m, d] = dateString.split('-');
-    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
-    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
-}
-
-function getSmartDateRangeString(datesArray) {
-    if (!datesArray || datesArray.length === 0) return "";
-    if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
-
-    const sorted = [...datesArray].sort();
-    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
-    
-    let groups = {};
-    sorted.forEach(d => {
-        const [y, m, day] = d.split('-');
-        const key = `${y}-${m}`;
-        if(!groups[key]) groups[key] = [];
-        groups[key].push(parseInt(day));
-    });
-
-    let res = [];
-    for(const key in groups) {
-        const [y, m] = key.split('-');
-        const days = groups[key];
-        let daysStr = "";
-        
-        if(days.length === 1) {
-            daysStr = days[0].toString();
-        } else if (days.length === 2) {
-            daysStr = `${days[0]} dan ${days[1]}`;
-        } else {
-            const lastDay = days.pop();
-            daysStr = `${days.join(', ')} dan ${lastDay}`;
-        }
-        
-        res.push(`${daysStr} ${months[parseInt(m)-1]} ${y}`);
-    }
-
-    return res.join(' serta ');
-}
-
+// ==========================================
+// PENGENDALIAN MODAL & MAKLUMAN (UI UTILITY)
+// ==========================================
 function showMsg(title, body) {
     document.getElementById('msg-title').textContent = title;
     document.getElementById('msg-body').textContent = body;
     document.getElementById('msg-modal').classList.remove('hidden-view');
 }
-function closeMsg() {
+
+window.closeMsg = function() {
     document.getElementById('msg-modal').classList.add('hidden-view');
-}
+};
 
-async function loadDashboardStats() {
-    try {
-        const { count: pegCount } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*', { count: 'exact', head: true })
-            .eq('peranan', 'PEGAWAI');
-
-        const { count: jurCount } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*', { count: 'exact', head: true })
-            .eq('peranan', 'JURULATIH');
-
-        const { count: guruCount } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*', { count: 'exact', head: true })
-            .eq('peranan', 'GURU');
-
-        document.getElementById('sum_pegawai').textContent = `${pegCount || 0} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${jurCount || 0} / 9`;
-        document.getElementById('sum_guru').innerHTML = `${guruCount || 0}`;
-
-        document.getElementById('summary-cards').classList.remove('hidden-view');
-    } catch (err) {
-        console.error("Ralat stat:", err);
-    }
-}
-
-document.getElementById('login-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const pwd = document.getElementById('admin_pwd').value;
-    if(pwd === ADMIN_PWD) {
-        document.getElementById('login-view').classList.add('hidden-view');
-        document.getElementById('dashboard-view').classList.remove('hidden-view');
-        document.getElementById('admin_pwd').value = '';
-        document.getElementById('login-error').classList.add('hidden-view');
-        loadSchools();
-        loadDashboardStats();
-    } else {
-        document.getElementById('login-error').classList.remove('hidden-view');
-    }
-});
-
-document.getElementById('btn-logout').addEventListener('click', () => {
-    document.getElementById('dashboard-view').classList.add('hidden-view');
-    document.getElementById('login-view').classList.remove('hidden-view');
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
-    document.getElementById('filter_subjek').value = '';
-    document.getElementById('btn-pdf').disabled = true;
-    document.getElementById('btn-sijil-pukal').disabled = true;
-    document.getElementById('check-all-cert').disabled = true;
-    document.getElementById('summary-cards').classList.add('hidden-view');
-
-    const btnSemak = document.getElementById('btn-semak-sekolah');
-    if(btnSemak) btnSemak.classList.add('hidden-view');
-
-    const btnReset = document.getElementById('btn-reset-filter');
-    if(btnReset) btnReset.classList.add('hidden-view');
-
-    const btnSemakKuota = document.getElementById('btn-semak-kuota');
-    const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
-    const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
-    const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
-    const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-
-    if(btnSemakKuota) btnSemakKuota.classList.add('hidden-view');
-    if(btnPukal1) btnPukal1.classList.add('hidden-view');
-    if(btnPukal2) btnPukal2.classList.add('hidden-view');
-    if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
-    if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
-
-    currentData = [];
-    currentFilter = null;
-});
-
+// ==========================================
+// INISIALISASI DATA AWAL
+// ==========================================
 async function loadSchools() {
     if (schoolsLoaded) return;
     try {
-        const { data, error } = await supabaseClient
-            .from('smpid_sekolah_data')
-            .select('kod_sekolah, nama_sekolah')
-            .order('nama_sekolah', { ascending: true });
-
-        if (error) throw error;
-
+        const data = await getSchoolsData();
         const select = document.getElementById('edit_sekolah');
         select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
 
@@ -287,6 +46,7 @@ async function loadSchools() {
             });
         }
 
+        // Pengecualian tambahan bagi PPD
         schoolMap["M030"] = "PEJABAT PENDIDIKAN DAERAH ALOR GAJAH";
         const ppdOption = document.createElement('option');
         ppdOption.value = "M030";
@@ -306,13 +66,80 @@ async function loadSchools() {
     }
 }
 
+async function loadDashboardStats() {
+    try {
+        const stats = await getAdminDashboardStats();
+
+        document.getElementById('sum_pegawai').textContent = `${stats.pegawai} / 10`;
+        document.getElementById('sum_jurulatih').textContent = `${stats.jurulatih} / 9`;
+        document.getElementById('sum_guru').innerHTML = `${stats.guru}`;
+
+        document.getElementById('summary-cards').classList.remove('hidden-view');
+    } catch (err) {
+        console.error("Ralat stat:", err);
+    }
+}
+
+// ==========================================
+// PROSES LOG MASUK / LOG KELUAR
+// ==========================================
+document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pwd = document.getElementById('admin_pwd').value;
+    if(pwd === ADMIN_PWD) {
+        document.getElementById('login-view').classList.add('hidden-view');
+        document.getElementById('dashboard-view').classList.remove('hidden-view');
+        document.getElementById('admin_pwd').value = '';
+        document.getElementById('login-error').classList.add('hidden-view');
+        
+        // Memuatkan konfigurasi awal setelah log masuk berjaya
+        loadSchools();
+        loadDashboardStats();
+    } else {
+        document.getElementById('login-error').classList.remove('hidden-view');
+    }
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => {
+    document.getElementById('dashboard-view').classList.add('hidden-view');
+    document.getElementById('login-view').classList.remove('hidden-view');
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
+    document.getElementById('filter_subjek').value = '';
+    
+    // Matikan kawalan data
+    const btns = ['btn-pdf', 'btn-sijil-pukal', 'check-all-cert'];
+    btns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = true;
+    });
+    
+    document.getElementById('summary-cards').classList.add('hidden-view');
+
+    // Sembunyikan butang tambahan
+    const hiddenBtns = ['btn-semak-sekolah', 'btn-reset-filter', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2'];
+    hiddenBtns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.add('hidden-view');
+    });
+
+    currentData = [];
+    currentFilter = null;
+});
+
+// ==========================================
+// PAPARAN JADUAL & PENAPISAN
+// ==========================================
 async function fetchTableData() {
     const selGroup = document.getElementById('filter_subjek').value;
     const tbody = document.getElementById('table-body');
-    const btnPdf = document.getElementById('btn-pdf');
-    const btnSijilPukal = document.getElementById('btn-sijil-pukal');
-    const checkAll = document.getElementById('check-all-cert');
     const summary = document.getElementById('summary-cards');
+    
+    // Tetapan butang UI
+    const controls = {
+        pdf: document.getElementById('btn-pdf'),
+        sijil: document.getElementById('btn-sijil-pukal'),
+        checkAll: document.getElementById('check-all-cert')
+    };
 
     currentFilter = null;
     const btnReset = document.getElementById('btn-reset-filter');
@@ -326,103 +153,67 @@ async function fetchTableData() {
     const conf = groupConfig[selGroup];
     const isSM = conf.label.includes('(SM)');
 
-    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
-    btnPdf.disabled = true;
-    btnSijilPukal.disabled = true;
-    checkAll.disabled = true;
-    checkAll.checked = false;
+    // Loading State
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
+    
+    Object.values(controls).forEach(c => { if(c) c.disabled = true; });
+    if(controls.checkAll) controls.checkAll.checked = false;
     currentData = [];
 
     try {
-        const { data: guruData, error: guruErr } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*')
-            .in('subjek', conf.subjects)
-            .eq('peranan', 'GURU')
-            .order('nama_sekolah', { ascending: true })
-            .order('nama_penuh', { ascending: true });
+        const { guruData, pegData, jurData } = await getAdminTableData(conf.subjects);
 
-        if (guruErr) throw guruErr;
+        // Kemas kini Dashboard Stats berdasarkan set tarikan terbaru
+        document.getElementById('sum_pegawai').textContent = `${pegData.length} / 10`;
+        document.getElementById('sum_jurulatih').textContent = `${jurData.length} / 9`;
+        document.getElementById('sum_guru').innerHTML = `${guruData.length}`;
 
-        const { data: pegData, error: pegErr } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*')
-            .eq('peranan', 'PEGAWAI')
-            .order('nama_penuh', { ascending: true });
-
-        if (pegErr) throw pegErr;
-
-        const { data: jurData, error: jurErr } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*')
-            .eq('peranan', 'JURULATIH')
-            .order('nama_penuh', { ascending: true });
-
-        if (jurErr) throw jurErr;
-
-        document.getElementById('sum_pegawai').textContent = `${(pegData || []).length} / 10`;
-        document.getElementById('sum_jurulatih').textContent = `${(jurData || []).length} / 9`;
-        document.getElementById('sum_guru').innerHTML = `${(guruData || []).length}`;
-
-        let paddedPegawai = [...(pegData || [])];
+        // Suntik rekod Dummy bagi Pegawai dan Jurulatih agar slot nampak jelas (visual UX)
+        let paddedPegawai = [...pegData];
         while(paddedPegawai.length < 10) paddedPegawai.push({ isDummy: true, roleLabel: 'PEGAWAI', peranan: 'PEGAWAI' });
 
-        let paddedJurulatih = [...(jurData || [])];
+        let paddedJurulatih = [...jurData];
         while(paddedJurulatih.length < 9) paddedJurulatih.push({ isDummy: true, roleLabel: 'JURULATIH', peranan: 'JURULATIH' });
 
-        currentData = [...paddedPegawai, ...paddedJurulatih, ...(guruData || [])];
-
+        currentData = [...paddedPegawai, ...paddedJurulatih, ...guruData];
         summary.classList.remove('hidden-view');
 
-        if(currentData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
-
-            const btnSemak = document.getElementById('btn-semak-sekolah');
-            if(btnSemak) btnSemak.classList.add('hidden-view');
-
-            const btnSemakKuota = document.getElementById('btn-semak-kuota');
-            const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
-            const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
-            const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
-            const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-
-            if(btnSemakKuota) btnSemakKuota.classList.add('hidden-view');
-            if(btnPukal1) btnPukal1.classList.add('hidden-view');
-            if(btnPukal2) btnPukal2.classList.add('hidden-view');
-            if(btnPukalTakHadir1) btnPukalTakHadir1.classList.add('hidden-view');
-            if(btnPukalTakHadir2) btnPukalTakHadir2.classList.add('hidden-view');
-
+        if(guruData.length === 0 && pegData.length === 0 && jurData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
+            
+            // Sembunyikan butang tindakan kumpulan
+            ['btn-semak-sekolah', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2'].forEach(id => {
+                const b = document.getElementById(id);
+                if(b) b.classList.add('hidden-view');
+            });
             return;
         }
 
         renderTable(currentFilter);
-        btnPdf.disabled = false;
-        btnSijilPukal.disabled = false;
-        checkAll.disabled = false;
+        
+        Object.values(controls).forEach(c => { if(c) c.disabled = false; });
 
-        const btnSemak = document.getElementById('btn-semak-sekolah');
-        if(btnSemak) btnSemak.classList.remove('hidden-view');
+        // Kawalan pendedahan elemen Semakan & Tindakan
+        const toggles = [
+            { id: 'btn-semak-sekolah', show: true },
+            { id: 'btn-semak-kuota', show: isSM },
+            { id: 'btn-pukal-hadir-1', show: true },
+            { id: 'btn-pukal-hadir-2', show: true },
+            { id: 'btn-pukal-tak-hadir-1', show: true },
+            { id: 'btn-pukal-tak-hadir-2', show: true }
+        ];
 
-        const btnSemakKuota = document.getElementById('btn-semak-kuota');
-        const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
-        const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
-        const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
-        const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-
-        if (isSM && btnSemakKuota) {
-            btnSemakKuota.classList.remove('hidden-view');
-        } else if (btnSemakKuota) {
-            btnSemakKuota.classList.add('hidden-view');
-        }
-
-        if (btnPukal1) btnPukal1.classList.remove('hidden-view');
-        if (btnPukal2) btnPukal2.classList.remove('hidden-view');
-        if (btnPukalTakHadir1) btnPukalTakHadir1.classList.remove('hidden-view');
-        if (btnPukalTakHadir2) btnPukalTakHadir2.classList.remove('hidden-view');
+        toggles.forEach(t => {
+            const el = document.getElementById(t.id);
+            if(el) {
+                if(t.show) el.classList.remove('hidden-view');
+                else el.classList.add('hidden-view');
+            }
+        });
 
     } catch (err) {
-        console.error("Ralat:", err);
-        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-red-500">Berlaku ralat sistem. Sila cuba lagi.</td></tr>';
+        console.error("Ralat fetching jadual:", err);
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-red-500">Berlaku ralat sistem semasa mengakses pangkalan data. Sila cuba lagi.</td></tr>';
     }
 }
 
@@ -465,11 +256,12 @@ function renderTable(filterPeranan = null) {
     }
 
     if (dataToRender.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">Tiada rekod pendaftaran untuk kategori ${filterPeranan || 'ini'}.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">Tiada rekod pendaftaran untuk kategori ${filterPeranan || 'ini'}.</td></tr>`;
         return;
     }
 
-    document.getElementById('check-all-cert').checked = false;
+    const checkAllBox = document.getElementById('check-all-cert');
+    if(checkAllBox) checkAllBox.checked = false;
 
     dataToRender.forEach((row, i) => {
         if(row.isDummy) {
@@ -477,7 +269,7 @@ function renderTable(filterPeranan = null) {
                 <tr class="bg-slate-50/50">
                     <td class="px-4 py-4 text-center"></td>
                     <td class="px-4 py-4 text-sm text-slate-400 text-center">${i + 1}</td>
-                    <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Ruang ${row.roleLabel} (Kosong)</td>
+                    <td class="px-4 py-4 text-sm text-slate-400 italic" colspan="4">Kekosongan Slot ${row.roleLabel}</td>
                 </tr>
             `;
             return;
@@ -502,18 +294,16 @@ function renderTable(filterPeranan = null) {
 
         let layakSijil = false;
         if (isExempt) {
-            let hasAnyAttended = false;
             for(let j=1; j<=8; j++) {
-                if(row[`sesi_${j}_hadir`]) hasAnyAttended = true;
+                if(row[`sesi_${j}_hadir`]) layakSijil = true;
             }
-            layakSijil = hasAnyAttended;
         } else {
             layakSijil = hadir1 && hadir2;
         }
 
         const checkboxHtml = layakSijil
             ? `<input type="checkbox" class="check-cert rounded text-blue-600 focus:ring-blue-500" value="${row.id}">`
-            : `<input type="checkbox" disabled class="rounded text-gray-300 opacity-50 cursor-not-allowed" title="Belum cukup kehadiran">`;
+            : `<input type="checkbox" disabled class="rounded text-slate-300 opacity-50 cursor-not-allowed" title="Belum cukup kehadiran">`;
 
         html += `
             <tr class="hover:bg-slate-50 transition-colors">
@@ -545,31 +335,33 @@ function renderTable(filterPeranan = null) {
     tbody.innerHTML = html;
 }
 
-document.getElementById('check-all-cert').addEventListener('change', function() {
-    const isChecked = this.checked;
-    const checkboxes = document.querySelectorAll('.check-cert');
-    checkboxes.forEach(cb => {
-        cb.checked = isChecked;
+// Toggle "Check All" function
+const checkAllInput = document.getElementById('check-all-cert');
+if(checkAllInput) {
+    checkAllInput.addEventListener('change', function() {
+        const isChecked = this.checked;
+        const checkboxes = document.querySelectorAll('.check-cert');
+        checkboxes.forEach(cb => {
+            cb.checked = isChecked;
+        });
     });
-});
+}
 
+// ==========================================
+// KAWALAN KEHADIRAN & TINDAKAN JADUAL
+// ==========================================
 window.toggleAttendance = async function(id, sesi, currentStatus) {
     const newStatus = !currentStatus;
     try {
         const updateData = {};
         updateData[`sesi_${sesi}_hadir`] = newStatus;
 
-        const { error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .update(updateData)
-            .eq('id', id);
+        await updateRecord(id, updateData);
 
-        if(error) throw error;
-
+        // Update local object array to prevent unnecessary full network fetch
         const record = currentData.find(r => r.id === id);
         if(record) {
             record[`sesi_${sesi}_hadir`] = newStatus;
-
             renderTable(currentFilter);
         }
     } catch (err) {
@@ -587,7 +379,7 @@ async function markBulkAttendance(sesi, isHadir) {
     }
 
     if (dataToUpdate.length === 0) {
-        showMsg("Makluman", "Tiada rekod untuk dikemaskini.");
+        showMsg("Makluman", "Tiada rekod untuk dikemaskini bagi pandangan ini.");
         return;
     }
 
@@ -599,6 +391,7 @@ async function markBulkAttendance(sesi, isHadir) {
     document.getElementById(btnId).textContent = "Memproses...";
     document.getElementById(btnId).disabled = true;
 
+    // Build update promises to execute in parallel
     const updatePromises = dataToUpdate.map(async (row) => {
         const role = row.peranan || 'GURU';
         const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
@@ -613,16 +406,7 @@ async function markBulkAttendance(sesi, isHadir) {
         const updateData = {};
         updateData[updateColumn] = isHadir;
 
-        const { error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .update(updateData)
-            .eq('id', row.id);
-
-        if (error) {
-            console.error(`Gagal kemaskini ID ${row.id}:`, error);
-            throw error;
-        }
-
+        await updateRecord(row.id, updateData);
         row[updateColumn] = isHadir;
     });
 
@@ -634,6 +418,7 @@ async function markBulkAttendance(sesi, isHadir) {
     } catch (err) {
         console.error("Ralat kemaskini pukal:", err);
         showMsg("Ralat", "Terdapat ralat semasa mengemaskini sebahagian rekod.");
+        // Re-render incase some requests were successful
         renderTable(currentFilter);
     } finally {
         document.getElementById(btnId).textContent = originalBtnText;
@@ -641,26 +426,20 @@ async function markBulkAttendance(sesi, isHadir) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const btnPukal1 = document.getElementById('btn-pukal-hadir-1');
-    const btnPukal2 = document.getElementById('btn-pukal-hadir-2');
-    const btnPukalTakHadir1 = document.getElementById('btn-pukal-tak-hadir-1');
-    const btnPukalTakHadir2 = document.getElementById('btn-pukal-tak-hadir-2');
-
-    if (btnPukal1) {
-        btnPukal1.addEventListener('click', () => markBulkAttendance(1, true));
-    }
-    if (btnPukal2) {
-        btnPukal2.addEventListener('click', () => markBulkAttendance(2, true));
-    }
-    if (btnPukalTakHadir1) {
-        btnPukalTakHadir1.addEventListener('click', () => markBulkAttendance(1, false));
-    }
-    if (btnPukalTakHadir2) {
-        btnPukalTakHadir2.addEventListener('click', () => markBulkAttendance(2, false));
+// Bind Pukal Buttons
+['btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2'].forEach(id => {
+    const btn = document.getElementById(id);
+    if(btn) {
+        btn.addEventListener('click', () => {
+            if(id.includes('hadir-1')) markBulkAttendance(1, !id.includes('tak-hadir'));
+            else if(id.includes('hadir-2')) markBulkAttendance(2, !id.includes('tak-hadir'));
+        });
     }
 });
 
+// ==========================================
+// PROSES PADAM & KEMASKINI (MODAL)
+// ==========================================
 window.openDelete = function(id) {
     deletingId = id;
     document.getElementById('delete-modal').classList.remove('hidden-view');
@@ -674,16 +453,11 @@ window.closeDelete = function() {
 window.confirmDelete = async function() {
     if(!deletingId) return;
     try {
-        const { error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .delete()
-            .eq('id', deletingId);
-
-        if(error) throw error;
-
+        await deleteRecord(deletingId);
+        
         closeDelete();
-
         loadDashboardStats();
+        
         if(document.getElementById('filter_subjek').value !== '') {
             fetchTableData();
         }
@@ -746,30 +520,28 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
     }
 
     try {
-        const { error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .update(kemaskiniData)
-            .eq('id', editingId);
-
-        if(error) throw error;
+        await updateRecord(editingId, kemaskiniData);
 
         closeEdit();
-
         loadDashboardStats();
+        
         if(document.getElementById('filter_subjek').value !== '') {
             fetchTableData();
         }
 
-        showMsg("Berjaya", "Rekod dikemaskini.");
+        showMsg("Berjaya", "Rekod peserta telah dikemaskini.");
     } catch (err) {
         console.error(err);
-        showMsg("Ralat", "Gagal menyimpan rekod.");
+        showMsg("Ralat", "Gagal menyimpan pengemaskinian rekod.");
     } finally {
         btn.disabled = false;
         btn.textContent = "Simpan Perubahan";
     }
 });
 
+// ==========================================
+// SEMAKAN SEKOLAH (MODAL DATA)
+// ==========================================
 window.bukaModalSemakSekolah = function() {
     const selGroup = document.getElementById('filter_subjek').value;
     if (!selGroup) {
@@ -803,16 +575,16 @@ window.bukaModalSemakSekolah = function() {
     ul.innerHTML = '';
 
     if (missingSchools.length === 0) {
-        ul.innerHTML = '<li class="p-3 text-center text-green-600 font-medium">Semua sekolah bagi kategori ini telah mempunyai wakil.</li>';
+        ul.innerHTML = '<li class="p-3 text-center text-emerald-600 font-medium">Semua sekolah bagi kategori ini telah mempunyai wakil yang berdaftar.</li>';
     } else {
         missingSchools.forEach((s, index) => {
             const li = document.createElement('li');
-            li.className = 'p-3 hover:bg-gray-100 flex flex-col md:flex-row md:justify-between md:items-center';
+            li.className = 'p-3 hover:bg-slate-50 flex flex-col md:flex-row md:justify-between md:items-center';
             li.innerHTML = `
                 <div>
-                    <span class="font-semibold text-gray-800">${index + 1}. ${s.nama}</span>
+                    <span class="font-semibold text-slate-800">${index + 1}. ${s.nama}</span>
                 </div>
-                <div class="mt-1 md:mt-0 text-xs font-medium bg-gray-200 text-gray-700 px-2 py-1 rounded w-max">
+                <div class="mt-1 md:mt-0 text-xs font-medium bg-slate-200 text-slate-700 px-2 py-1 rounded w-max">
                     ${s.kod} | ${s.jenis}
                 </div>
             `;
@@ -838,7 +610,7 @@ window.bukaModalSemakKuota = function() {
     const isSM = conf.label.includes('(SM)');
 
     if (!isSM) {
-        showMsg("Ralat", "Semakan kuota 3 peserta hanya untuk kumpulan Sekolah Menengah (SM).");
+        showMsg("Ralat", "Semakan kuota minimum peserta hanya diguna pakai untuk kumpulan Sekolah Menengah (SM).");
         return;
     }
 
@@ -848,6 +620,7 @@ window.bukaModalSemakKuota = function() {
     const pendaftaranSekolah = {};
     targetSchools.forEach(s => pendaftaranSekolah[s.kod] = 0);
 
+    // Kumpul data kehadiran berdaftar semasa
     currentData.forEach(row => {
         if (!row.isDummy && row.peranan === 'GURU' && row.kod_sekolah) {
             if (pendaftaranSekolah[row.kod_sekolah] !== undefined) {
@@ -868,18 +641,18 @@ window.bukaModalSemakKuota = function() {
     ul.innerHTML = '';
 
     if (kurangKuotaSchools.length === 0) {
-        ul.innerHTML = '<li class="p-3 text-center text-green-600 font-medium">Semua sekolah Menengah telah mencapai kuota pendaftaran minimum (3 orang).</li>';
+        ul.innerHTML = '<li class="p-3 text-center text-emerald-600 font-medium">Cemerlang! Semua sekolah Menengah telah mencapai kuota pendaftaran minimum (3 orang).</li>';
     } else {
         kurangKuotaSchools.forEach((s, index) => {
             const li = document.createElement('li');
-            li.className = 'p-3 hover:bg-red-50 flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-100 last:border-0';
+            li.className = 'p-3 hover:bg-rose-50 flex flex-col md:flex-row md:justify-between md:items-center border-b border-slate-100 last:border-0';
 
-            const badgeWarna = s.jumlahDaftar === 0 ? 'bg-red-100 text-red-800 border-red-200' : 'bg-orange-100 text-orange-800 border-orange-200';
+            const badgeWarna = s.jumlahDaftar === 0 ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-orange-100 text-orange-800 border-orange-200';
 
             li.innerHTML = `
                 <div>
-                    <span class="font-semibold text-gray-800">${index + 1}. ${s.nama}</span>
-                    <div class="mt-0.5 text-[10px] text-gray-500">${s.kod} | ${s.jenis}</div>
+                    <span class="font-semibold text-slate-800">${index + 1}. ${s.nama}</span>
+                    <div class="mt-0.5 text-[10px] text-slate-500">${s.kod} | ${s.jenis}</div>
                 </div>
                 <div class="mt-2 md:mt-0 text-xs font-bold px-3 py-1 rounded border ${badgeWarna} w-max">
                     Daftar: ${s.jumlahDaftar} / 3
@@ -896,44 +669,11 @@ window.tutupModalSemakKuota = function() {
     document.getElementById('modal-kuota-sekolah').classList.add('hidden-view');
 };
 
-function getBase64Image(imgUrl) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.src = imgUrl;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(null);
-    });
-}
+// ==========================================
+// PENJANAAN PDF DARI MODUL BERASINGAN
+// ==========================================
 
-function getLogoBase64() {
-    return getBase64Image('ikonppd.png');
-}
-
-async function getCursiveFontBase64() {
-    try {
-        const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/greatvibes/GreatVibes-Regular.ttf');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const buffer = await response.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary);
-    } catch (e) {
-        console.error("Gagal memuat turun font cursive:", e);
-        return null;
-    }
-}
-
+// Butang 1: PDF Laporan Kehadiran
 document.getElementById('btn-pdf').addEventListener('click', async () => {
     if(currentData.length === 0) return;
 
@@ -950,6 +690,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
         dataToExport = currentData.filter(row => row.peranan === currentFilter || row.roleLabel === currentFilter);
     }
 
+    // Hanya ambil rekod yang lengkap kehadiran
     const fullyAttendedData = dataToExport.filter(row => {
         if(row.isDummy) return false;
 
@@ -963,98 +704,32 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     });
 
     if (fullyAttendedData.length === 0) {
-        showMsg("Tiada Rekod", `Tiada peserta${currentFilter ? ` bagi kategori ${currentFilter}` : ''} yang melengkapkan kedua-dua sesi kehadiran.`);
+        showMsg("Tiada Rekod", `Tiada peserta${currentFilter ? ` bagi kategori ${currentFilter}` : ''} yang telah melengkapkan kedua-dua sesi kehadiran untuk dijana laporannya.`);
         btnPdf.textContent = originalText;
         btnPdf.disabled = false;
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
-
-    const logoData = await getLogoBase64();
-    let startYTable = 38;
-
-    if (logoData) {
-        doc.addImage(logoData, 'PNG', 14, 10, 32, 24);
-
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 48, 18);
-
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        let titleSuffix = currentFilter ? ` (${currentFilter}) - HADIR PENUH` : ` - HADIR PENUH`;
-        doc.text(`Kumpulan: ${conf.label}${titleSuffix}`, 48, 25);
-    } else {
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI GURU STEM DAERAH ALOR GAJAH", 14, 18);
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        let titleSuffix = currentFilter ? ` (${currentFilter}) - HADIR PENUH` : ` - HADIR PENUH`;
-        doc.text(`Kumpulan: ${conf.label}${titleSuffix}`, 14, 25);
+    try {
+        const doc = await generateAttendanceReport(fullyAttendedData, selGroup, currentFilter);
+        
+        const roleSuffix = currentFilter ? `_${currentFilter}` : '';
+        const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
+        doc.save(`Kehadiran_Penuh_${safeFileName}${roleSuffix}.pdf`);
+    } catch (err) {
+        console.error("Ralat PDF Laporan:", err);
+        showMsg("Ralat", "Gagal menjana laporan kehadiran PDF.");
+    } finally {
+        btnPdf.textContent = originalText;
+        btnPdf.disabled = false;
     }
-
-    const tableData = fullyAttendedData.map((row, i) => {
-        const role = row.peranan || 'GURU';
-        let namaPapar = row.nama_penuh;
-
-        // Pengecualian label bagi sekolah PPDAG (M030)
-        if (row.kod_sekolah !== 'M030') {
-            namaPapar = `${row.nama_penuh}\n(${role} ${role === 'GURU' && row.subjek ? '- ' + row.subjek : ''})`;
-        }
-
-        return [
-            i + 1,
-            namaPapar,
-            row.ic_no,
-            `${row.kod_sekolah || ''}\n${row.nama_sekolah || ''}`,
-            "",
-            ""
-        ];
-    });
-
-    doc.autoTable({
-        startY: startYTable,
-        head: [[
-            'Bil',
-            'Nama Penuh & Peranan',
-            'No. Kad Pengenalan',
-            'Sekolah',
-            `Sesi 1\n(${conf.d1})`,
-            `Sesi 2\n(${conf.d2})`
-        ]],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: [30, 41, 59], textColor: 255, halign: 'center' },
-        styles: { fontSize: 9, cellPadding: 3, valign: 'middle' },
-        columnStyles: {
-            0: { cellWidth: 12, halign: 'center' },
-            1: { cellWidth: 70 },
-            2: { cellWidth: 35, halign: 'center' },
-            3: { cellWidth: 70 },
-            4: { cellWidth: 40 },
-            5: { cellWidth: 40 }
-        },
-        didDrawCell: function(data) {
-            if ((data.column.index === 4 || data.column.index === 5) && data.section === 'body') {
-            }
-        }
-    });
-
-    const roleSuffix = currentFilter ? `_${currentFilter}` : '';
-    const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
-    doc.save(`Kehadiran_Penuh_${safeFileName}${roleSuffix}.pdf`);
-
-    btnPdf.textContent = originalText;
-    btnPdf.disabled = false;
 });
 
+// Butang 2: PDF Sijil Pukal
 document.getElementById('btn-sijil-pukal').addEventListener('click', async () => {
     const checkedBoxes = document.querySelectorAll('.check-cert:checked');
     if (checkedBoxes.length === 0) {
-        showMsg("Tiada Pilihan", "Sila tandakan sekurang-kurangnya satu peserta untuk muat turun sijil.");
+        showMsg("Tiada Pilihan", "Sila tandakan sekurang-kurangnya satu baris peserta untuk muat turun sijil.");
         return;
     }
 
@@ -1064,107 +739,24 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
     btn.disabled = true;
 
     try {
-        const { jsPDF } = window.jspdf;
-        const logoData = await getLogoBase64();
-        const signData = await getBase64Image('tttnhj.png');
-        const fontB64 = await getCursiveFontBase64();
-
-        const finalDoc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
-        if (fontB64) {
-            finalDoc.addFileToVFS('Cursive.ttf', fontB64);
-            finalDoc.addFont('Cursive.ttf', 'Cursive', 'normal');
-        }
-
+        // Bina dataset peserta yang sah untuk sijil pukal
+        const records = [];
         for (let i = 0; i < checkedBoxes.length; i++) {
-            if (i > 0) finalDoc.addPage();
-
             const recordId = checkedBoxes[i].value;
             const record = currentData.find(r => r.id === recordId);
-            if (!record) continue;
-
-            const peranan = record.peranan || 'GURU';
-            const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
-            let paparanTarikh = "";
-
-            if (isExempt) {
-                let attendedDatesRaw = [];
-                for (let j = 1; j <= 8; j++) {
-                    if (record[`sesi_${j}_hadir`]) {
-                        attendedDatesRaw.push(absoluteDates[j-1]);
-                    }
-                }
-                paparanTarikh = getSmartDateRangeString(attendedDatesRaw);
-            } else {
-                paparanTarikh = getSmartDateRangeString([record.sesi_1_tarikh, record.sesi_2_tarikh]);
-            }
-
-            const centerX = finalDoc.internal.pageSize.getWidth() / 2;
-
-            if (logoData) {
-                finalDoc.addImage(logoData, 'PNG', centerX - 25.3, 20, 50.6, 33.73);
-            }
-
-            if (fontB64) {
-                finalDoc.setFont("Cursive", "normal");
-                finalDoc.setFontSize(80);
-            } else {
-                finalDoc.setFont("helvetica", "bolditalic");
-                finalDoc.setFontSize(42);
-            }
-
-            const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
-            finalDoc.setTextColor(220, 38, 38);
-            finalDoc.text(sijilTitle, centerX, 90, { align: 'center' });
-
-            finalDoc.setFont("helvetica", "normal");
-            finalDoc.setFontSize(14);
-            finalDoc.setTextColor(75, 85, 99);
-            finalDoc.text("Dengan ini disahkan bahawa", centerX, 115, { align: 'center' });
-
-            finalDoc.setFont("helvetica", "bold");
-            finalDoc.setFontSize(20);
-            finalDoc.setTextColor(17, 24, 39);
-            finalDoc.text(record.nama_penuh, centerX, 130, { align: 'center' });
-
-            finalDoc.setFont("helvetica", "normal");
-            finalDoc.setFontSize(12);
-            finalDoc.text(`No. Kad Pengenalan: ${record.ic_no}`, centerX, 140, { align: 'center' });
-
-            finalDoc.setFontSize(14);
-            finalDoc.setTextColor(75, 85, 99);
-            finalDoc.text("telah menyertai", centerX, 155, { align: 'center' });
-
-            finalDoc.setFont("helvetica", "bold");
-            finalDoc.setFontSize(16);
-            finalDoc.setTextColor(30, 64, 175);
-            finalDoc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
-            finalDoc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
-
-            finalDoc.setFont("helvetica", "normal");
-            finalDoc.setFontSize(14);
-            finalDoc.setTextColor(75, 85, 99);
-            let paparanPeranan = peranan === 'GURU' ? "sebagai PESERTA" : `sebagai ${peranan}`;
-            finalDoc.text(paparanPeranan, centerX, 193, { align: 'center' });
-
-            finalDoc.setFontSize(12);
-            finalDoc.text("pada", centerX, 205, { align: 'center' });
-            finalDoc.text(paparanTarikh, centerX, 213, { align: 'center', maxWidth: 170 });
-
-            if (signData) {
-                finalDoc.addImage(signData, 'PNG', centerX - 48.3, 230, 96.6, 38.64);
-            }
+            if (record) records.push(record);
         }
 
+        const doc = await generateBulkCertificates(records);
+        
         const selGroup = document.getElementById('filter_subjek').value;
         const groupLabel = groupConfig[selGroup] ? groupConfig[selGroup].label.replace(/[^a-zA-Z0-9]/g, '_') : 'Pukal';
-
-        finalDoc.save(`Sijil_Pukal_${groupLabel}.pdf`);
-
-        showMsg("Berjaya", `${checkedBoxes.length} sijil telah digabungkan dan dimuat turun.`);
+        
+        doc.save(`Sijil_Pukal_${groupLabel}.pdf`);
+        showMsg("Berjaya", `${records.length} sijil peserta telah digabungkan ke dalam satu fail PDF dan sedang dimuat turun.`);
     } catch (err) {
         console.error("Ralat janaan sijil pukal:", err);
-        showMsg("Ralat", "Gagal menjana sijil pukal.");
+        showMsg("Ralat", "Berlaku ralat sistem ketika menjana sijil pukal.");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;

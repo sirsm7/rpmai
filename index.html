@@ -3,174 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eDaftar PPDAG</title>
+    <title>eDaftar PPDAG - Sistem Pendaftaran Bengkel</title>
     
-    <link rel="icon" type="image/png" href="ikonppd.png">
-
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.default.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-
+    <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+    
+    <!-- TomSelect CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col relative">
 
+    <!-- Toast Notification -->
     <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 transition-all duration-300 z-50 rounded-md shadow-lg px-6 py-3 text-white font-medium">
-        <span id="toast-message"></span>
+        <span id="toast-message">Mesej Notifikasi</span>
     </div>
 
-    <div class="mb-6 text-center">
-        <img src="ikonppd.png" alt="Logo PPDAG" class="h-32 mx-auto" onerror="this.style.display='none'">
-    </div>
-
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-gray-100">
-        <div class="bg-blue-600 px-6 py-5 text-center">
-            <h1 class="text-2xl font-bold text-white">eDaftar PPDAG</h1>
-            <p class="text-blue-100 text-sm mt-1">Sistem Pendaftaran & Kehadiran Bengkel</p>
+    <!-- Main Container -->
+    <div class="max-w-3xl w-full mx-auto p-4 flex-grow flex flex-col">
+        
+        <!-- Header -->
+        <div class="text-center mt-6 mb-8">
+            <img src="ikonppd.png" alt="Logo PPDAG" class="h-20 mx-auto mb-4 object-contain">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">eDaftar PPDAG</h1>
+            <p class="text-slate-500 mt-1">Sistem Pendaftaran & Kehadiran Bengkel</p>
         </div>
 
-        <div class="p-6 md:p-8">
-            
-            <div id="loading-view" class="hidden-view text-center py-8">
-                <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="text-gray-500 font-medium" id="loading-text">Sila tunggu...</p>
-            </div>
+        <!-- VIEW: Loading -->
+        <div id="loading-view" class="hidden-view flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm border border-slate-100">
+            <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p id="loading-text" class="text-slate-600 font-medium">Sila tunggu...</p>
+        </div>
 
-            <div id="check-view" class="space-y-6">
-                <div class="text-center mb-6">
-                    <h2 class="text-xl font-semibold text-gray-800">Semakan Kehadiran</h2>
-                    <p class="text-sm text-gray-500 mt-1">Sila masukkan No. Kad Pengenalan anda</p>
-                </div>
-                <form id="check-form" class="space-y-4">
-                    <div>
-                        <label for="ic_check" class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
-                        <input type="text" id="ic_check" required pattern="[0-9]+" placeholder="Contoh: 880101015566" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                        <p class="text-xs text-gray-400 mt-1">Tanpa sengkang (-)</p>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">Semak Status</button>
-                </form>
-            </div>
-
-            <div id="register-view" class="hidden-view space-y-5">
-                <div class="text-center mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Pendaftaran Baru</h2>
-                    <p class="text-sm text-gray-500 mt-1">Lengkapkan butiran di bawah</p>
-                </div>
-                <form id="register-form" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">No. Kad Pengenalan</label>
-                        <input type="text" id="reg_ic" readonly class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600 font-medium">
-                    </div>
-                    <div>
-                        <label for="reg_nama" class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh</label>
-                        <input type="text" id="reg_nama" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase">
-                    </div>
-                    
-                    <div>
-                        <label for="reg_peranan" class="block text-sm font-medium text-gray-700 mb-1">Peranan</label>
-                        <select id="reg_peranan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">-- Pilih Peranan --</option>
-                            <option value="PEGAWAI">PEGAWAI</option>
-                            <option value="JURULATIH">JURULATIH</option>
-                            <option value="GURU">GURU</option>
-                        </select>
-                    </div>
-
-                    <div id="subjek_container">
-                        <label for="reg_subjek" class="block text-sm font-medium text-gray-700 mb-1">Subjek</label>
-                        <select id="reg_subjek" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">-- Pilih Subjek --</option>
-                            <option value="MATEMATIK (SR)">MATEMATIK (SR)</option>
-                            <option value="SAINS (SR)">SAINS (SR)</option>
-                            <option value="MATEMATIK (SM)">MATEMATIK (SM)</option>
-                            <option value="SAINS KOMPUTER (SM)">SAINS KOMPUTER (SM)</option>
-                            <option value="SAINS (SM)">SAINS (SM)</option>
-                            <option value="SAINS TULEN (SM)">SAINS TULEN (SM)</option>
-                        </select>
-                        <p id="reg_tarikh_info" class="text-xs text-blue-600 mt-1 font-medium min-h-[16px]"></p>
-                    </div>
-                    
-                    <div>
-                        <label for="reg_sekolah" class="block text-sm font-medium text-gray-700 mb-1">Sekolah</label>
-                        <select id="reg_sekolah" required placeholder="Cari nama sekolah..." class="w-full border-gray-300 rounded-lg">
-                            <option value="">-- Memuatkan Sekolah... --</option>
-                        </select>
-                    </div>
-                    <div class="pt-2 flex gap-3">
-                        <button type="button" id="btn-batal-reg" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2.5 rounded-lg transition-colors">Batal</button>
-                        <button type="submit" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors">Daftar & Teruskan</button>
-                    </div>
-                </form>
-            </div>
-
-            <div id="dashboard-view" class="hidden-view space-y-6">
-                <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                    <h3 id="dash_nama" class="font-bold text-gray-800 uppercase"></h3>
-                    <p id="dash_ic" class="text-sm text-gray-600"></p>
-                    <div class="mt-3 pt-3 border-t border-blue-200 text-sm">
-                        <p><span class="font-semibold text-gray-700">Peranan:</span> <span id="dash_peranan" class="text-gray-800 font-medium"></span></p>
-                        <p id="dash_subjek_container"><span class="font-semibold text-gray-700">Subjek:</span> <span id="dash_subjek" class="text-gray-800"></span></p>
-                        <p><span class="font-semibold text-gray-700">Sekolah/Organisasi:</span> <span id="dash_sekolah" class="text-gray-800"></span></p>
-                    </div>
-                </div>
-
+        <!-- VIEW: Check IC -->
+        <div id="check-view" class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 md:p-8">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 border-b pb-3">Semakan Kehadiran</h2>
+            <form id="check-form" class="space-y-4">
                 <div>
-                    <h4 class="text-md font-bold text-gray-800 mb-3 text-center">Pengesahan Kehadiran</h4>
-                    
-                    <div id="sessions_container" class="space-y-3">
-                        <!-- Sesi dijana secara dinamik melalui JavaScript -->
-                    </div>
-                    
-                    <div id="sijil_container" class="mt-6 p-4 border rounded-lg bg-green-50 shadow-sm text-center hidden-view">
-                        <h4 class="font-bold text-green-800 mb-2">E-Sijil Penyertaan</h4>
-                        <p class="text-sm text-green-700 mb-4">Sijil anda telah sedia.</p>
-                        
-                        <div id="sijil_options_container" class="mb-4 hidden-view text-left">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih tarikh untuk sijil (Minimum 1):</label>
-                            <div id="sijil_checkboxes" class="space-y-2 max-h-32 overflow-y-auto p-2 border border-green-200 rounded bg-white">
-                                <!-- Checkbox dijana secara dinamik untuk Pegawai/Jurulatih -->
-                            </div>
-                        </div>
+                    <label for="ic_check" class="block text-sm font-medium text-slate-700 mb-1">No. Kad Pengenalan</label>
+                    <input type="text" id="ic_check" required pattern="[0-9]{12}" placeholder="Cth: 850101015555" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow" aria-describedby="ic-help">
+                    <p id="ic-help" class="text-xs text-slate-500 mt-1">Sila masukkan 12 digit nombor MyKad tanpa sengkang (-).</p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Semak Status</button>
+            </form>
+        </div>
 
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <button id="btn_jana_sijil" type="button" class="w-full px-4 py-2.5 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white transition-colors shadow-sm flex items-center justify-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                                Muat Turun
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 p-4 border rounded-lg bg-slate-50 shadow-sm text-center">
-                        <h4 class="font-bold text-gray-800 mb-2">Penilaian Bengkel (BPG)</h4>
-                        <p class="text-sm text-gray-600 mb-4">Sila lengkapkan borang ini selepas selesai semua sesi anda.</p>
-                        <a id="btn_penilaian" href="#" target="_blank" class="block w-full px-6 py-2.5 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed transition-colors">
-                            Borang Maklum Balas
-                        </a>
-                    </div>
+        <!-- VIEW: Register -->
+        <div id="register-view" class="hidden-view bg-white rounded-xl shadow-sm border border-slate-100 p-6 md:p-8">
+            <h2 class="text-xl font-bold text-slate-800 mb-6 border-b pb-3">Pendaftaran Baru</h2>
+            <form id="register-form" class="space-y-5">
+                <div>
+                    <label for="reg_ic" class="block text-sm font-medium text-slate-700 mb-1">No. Kad Pengenalan</label>
+                    <input type="text" id="reg_ic" readonly class="w-full px-4 py-2 bg-slate-100 border border-slate-200 rounded-lg text-slate-600 font-medium">
+                </div>
+                <div>
+                    <label for="reg_nama" class="block text-sm font-medium text-slate-700 mb-1">Nama Penuh (Seperti dalam Kad Pengenalan)</label>
+                    <input type="text" id="reg_nama" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                </div>
+                <div>
+                    <label for="reg_peranan" class="block text-sm font-medium text-slate-700 mb-1">Peranan</label>
+                    <select id="reg_peranan" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="">-- Pilih Peranan --</option>
+                        <option value="PEGAWAI">PEGAWAI</option>
+                        <option value="JURULATIH">JURULATIH UTAMA</option>
+                        <option value="GURU">GURU / PESERTA</option>
+                    </select>
                 </div>
 
-                <div class="text-center pt-2">
-                    <button type="button" id="btn-keluar" class="text-gray-500 hover:text-gray-800 text-sm font-medium underline">Keluar / Pengguna Lain</button>
+                <div id="subjek_container">
+                    <label for="reg_subjek" class="block text-sm font-medium text-slate-700 mb-1">Kumpulan Subjek</label>
+                    <select id="reg_subjek" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="">-- Pilih Subjek --</option>
+                        <option value="MATEMATIK (SR)">MATEMATIK (SR)</option>
+                        <option value="SAINS (SR)">SAINS (SR)</option>
+                        <option value="MATEMATIK (SM)">MATEMATIK (SM)</option>
+                        <option value="SAINS KOMPUTER (SM)">SAINS KOMPUTER (SM)</option>
+                        <option value="SAINS (SM)">SAINS (SM)</option>
+                        <option value="SAINS TULEN (SM)">SAINS TULEN (SM)</option>
+                    </select>
+                    <p id="reg_tarikh_info" class="text-xs text-blue-600 font-medium mt-1"></p>
+                </div>
+                <div>
+                    <label for="reg_sekolah" class="block text-sm font-medium text-slate-700 mb-1">Sekolah / Organisasi</label>
+                    <select id="reg_sekolah" required placeholder="Sila cari dan pilih sekolah..." class="w-full"></select>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button type="button" id="btn-batal-reg" class="w-full sm:w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium py-2.5 rounded-lg transition-colors">Batal</button>
+                    <button type="submit" class="w-full sm:w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">Daftar & Teruskan</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- VIEW: Dashboard -->
+        <div id="dashboard-view" class="hidden-view space-y-6">
+            
+            <!-- Profil Ringkas -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="dash_nama" class="text-xl font-bold text-slate-900 uppercase">Nama Peserta</h2>
+                        <p id="dash_ic" class="text-slate-500 font-medium">000000000000</p>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-slate-500 block text-xs uppercase tracking-wider font-semibold">Peranan</span>
+                        <span id="dash_peranan" class="font-medium text-slate-800">GURU</span>
+                    </div>
+                    <div id="dash_subjek_container">
+                        <span class="text-slate-500 block text-xs uppercase tracking-wider font-semibold">Subjek</span>
+                        <span id="dash_subjek" class="font-medium text-slate-800">-</span>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <span class="text-slate-500 block text-xs uppercase tracking-wider font-semibold">Sekolah/Organisasi</span>
+                        <span id="dash_sekolah" class="font-medium text-slate-800">Kod - Nama</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Pengesahan Kehadiran -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Pengesahan Kehadiran</h3>
+                <div id="sessions_container" class="space-y-3">
+                    <!-- Sesi Dijana Secara Dinamik -->
+                </div>
+            </div>
+
+            <!-- Sijil Penyertaan -->
+            <div id="sijil_container" class="hidden-view bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h3 class="text-lg font-bold text-slate-800 mb-2">E-Sijil Penyertaan</h3>
+                <p class="text-sm text-slate-600 mb-4">Sijil anda sedia dimuat turun apabila kehadiran dipenuhi.</p>
+                
+                <div id="sijil_options_container" class="hidden-view mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p class="text-xs font-semibold text-slate-600 mb-2">Pilih tarikh untuk sijil (Minimum 1):</p>
+                    <div id="sijil_checkboxes" class="flex flex-wrap gap-4">
+                        <!-- Checkboxes Dinamik -->
+                    </div>
+                </div>
+                
+                <button id="btn_jana_sijil" class="w-full sm:w-auto px-6 py-2.5 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">Muat Turun Sijil</button>
+            </div>
+
+            <!-- Penilaian BPG -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 text-center">
+                <h3 class="text-lg font-bold text-slate-800 mb-2">Penilaian Bengkel (BPG)</h3>
+                <p class="text-sm text-slate-600 mb-4">Sila lengkapkan borang penilaian keberkesanan bengkel ini selepas selesai semua sesi pendaftaran.</p>
+                <a id="btn_penilaian" href="#" target="_blank" class="block w-full px-6 py-2.5 rounded-lg font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-sm pointer-events-none opacity-50">Borang Maklum Balas</a>
+            </div>
+
+            <button id="btn-keluar" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium py-3 rounded-lg transition-colors shadow-sm">Keluar / Log Masuk Semula</button>
         </div>
-    </div>
-    
-    <div id="admin-link-container" class="mt-6 text-center">
-        <a href="admin.html" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">Ke Log Masuk Admin &rarr;</a>
+
     </div>
 
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    <!-- Admin Link Container -->
+    <div id="admin-link-container" class="py-6 text-center text-sm text-slate-400">
+        <a href="admin.html" class="hover:text-slate-600 underline transition-colors">Ke Log Masuk Admin &rarr;</a>
+    </div>
+
+    <!-- Main Module Application -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>

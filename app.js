@@ -1,6 +1,7 @@
-const SUPABASE_URL = 'https://app.tech4ag.my';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMzczNjQ1LCJleHAiOjIwNzg3MzM2NDV9.vZOedqJzUn01PjwfaQp7VvRzSm4aRMr21QblPDK8AoY';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { subjectDatesMap, absoluteDates, WORKSHOP_LAT, WORKSHOP_LNG, MAX_RADIUS_METERS } from './config.js';
+import { formatDateDisplay, getSmartDateRangeString, isDateArrived, calculateDistance } from './utils.js';
+import { getSchoolsData, getUserByIC, getExactRoleCount, registerNewUser, updateRecord } from './data.js';
+import { generateSingleCertificate } from './pdf-service.js';
 
 const views = {
     check: document.getElementById('check-view'),
@@ -8,45 +9,6 @@ const views = {
     dashboard: document.getElementById('dashboard-view'),
     loading: document.getElementById('loading-view')
 };
-
-const subjectDatesMap = {
-    "MATEMATIK (SR)": { s1: "2026-07-20", s2: "2026-07-21" },
-    "SAINS (SR)": { s1: "2026-07-22", s2: "2026-07-23" },
-    "MATEMATIK (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
-    "SAINS KOMPUTER (SM)": { s1: "2026-08-10", s2: "2026-08-11" },
-    "SAINS (SM)": { s1: "2026-08-12", s2: "2026-08-13" },
-    "SAINS TULEN (SM)": { s1: "2026-08-12", s2: "2026-08-13" }
-};
-
-const absoluteDates = [
-    "2026-07-20",
-    "2026-07-21",
-    "2026-07-22",
-    "2026-07-23",
-    "2026-08-10",
-    "2026-08-11",
-    "2026-08-12",
-    "2026-08-13"
-];
-
-const WORKSHOP_LAT = 2.3448043344238445;
-const WORKSHOP_LNG = 102.1049791621177;
-const MAX_RADIUS_METERS = 200;
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3;
-    const p1 = lat1 * Math.PI / 180;
-    const p2 = lat2 * Math.PI / 180;
-    const deltaP = (lat2 - lat1) * Math.PI / 180;
-    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(deltaP / 2) * Math.sin(deltaP / 2) +
-              Math.cos(p1) * Math.cos(p2) *
-              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-}
 
 let tomSelectInstance = null;
 let currentRecord = null;
@@ -93,78 +55,15 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-function formatDateDisplay(dateString) {
-    if(!dateString) return "";
-    const [y, m, d] = dateString.split('-');
-    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
-    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
-}
-
-function getSmartDateRangeString(datesArray) {
-    if (!datesArray || datesArray.length === 0) return "";
-    if (datesArray.length === 1) return formatDateDisplay(datesArray[0]);
-
-    const sorted = [...datesArray].sort();
-    const months = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
-    
-    let groups = {};
-    sorted.forEach(d => {
-        const [y, m, day] = d.split('-');
-        const key = `${y}-${m}`;
-        if(!groups[key]) groups[key] = [];
-        groups[key].push(parseInt(day));
-    });
-
-    let res = [];
-    for(const key in groups) {
-        const [y, m] = key.split('-');
-        const days = groups[key];
-        let daysStr = "";
-        
-        if(days.length === 1) {
-            daysStr = days[0].toString();
-        } else if (days.length === 2) {
-            daysStr = `${days[0]} dan ${days[1]}`;
-        } else {
-            const lastDay = days.pop();
-            daysStr = `${days.join(', ')} dan ${lastDay}`;
-        }
-        
-        res.push(`${daysStr} ${months[parseInt(m)-1]} ${y}`);
-    }
-
-    return res.join(' serta ');
-}
-
-function isDateArrived(dateString) {
-    if (!dateString) return false;
-    const [y, m, d] = dateString.split('-');
-    const targetDate = new Date(y, m - 1, d);
-    const now = new Date();
-    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return todayDate >= targetDate;
-}
-
 async function checkRoleAvailability() {
     try {
-        const { data, error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('peranan');
-
-        if (error) throw error;
-
+        const pegCount = await getExactRoleCount('PEGAWAI');
+        const jurCount = await getExactRoleCount('JURULATIH');
+        
         const countMap = {
-            'PEGAWAI': 0,
-            'JURULATIH': 0
+            'PEGAWAI': pegCount,
+            'JURULATIH': jurCount
         };
-
-        if (data) {
-            data.forEach(item => {
-                if (countMap[item.peranan] !== undefined) {
-                    countMap[item.peranan]++;
-                }
-            });
-        }
 
         const limits = {
             'PEGAWAI': 10,
@@ -204,31 +103,23 @@ function filterAvailableSubjects() {
 
         const dates = subjectDatesMap[option.value];
         if (dates) {
+            // Membenarkan paparan opsyen hanya pada hari kejadian sesi 1 atau sesi 2
             if (todayString === dates.s1 || todayString === dates.s2) {
                 option.disabled = false;
                 option.textContent = option.value;
             } else {
                 option.disabled = true;
-                option.textContent = `${option.value} (Closed)`;
+                option.textContent = `${option.value} (Tutup)`;
             }
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkRoleAvailability();
-});
-
 async function loadSchools() {
     if (schoolsLoaded) return;
     try {
-        const { data, error } = await supabaseClient
-            .from('smpid_sekolah_data')
-            .select('kod_sekolah, nama_sekolah')
-            .order('nama_sekolah', { ascending: true });
-
-        if (error) throw error;
-
+        const data = await getSchoolsData();
+        
         const select = document.getElementById('reg_sekolah');
         select.innerHTML = '<option value="">-- Cari Sekolah... --</option>';
 
@@ -263,15 +154,7 @@ async function loadSchools() {
 async function checkIC(ic) {
     showLoading("Menyemak rekod...");
     try {
-        const { data, error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .select('*')
-            .eq('ic_no', ic)
-            .single();
-
-        if (error && error.code !== 'PGRST116') {
-            throw error;
-        }
+        const data = await getUserByIC(ic);
 
         if (data) {
             currentRecord = data;
@@ -293,23 +176,6 @@ async function checkIC(ic) {
     }
 }
 
-document.getElementById('reg_peranan').addEventListener('change', (e) => {
-    const role = e.target.value;
-    const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
-    const subjekContainer = document.getElementById('subjek_container');
-    const subjekInput = document.getElementById('reg_subjek');
-
-    if(isExempt) {
-        subjekContainer.classList.add('hidden-view');
-        subjekInput.required = false;
-        subjekInput.value = '';
-        document.getElementById('reg_tarikh_info').textContent = '';
-    } else {
-        subjekContainer.classList.remove('hidden-view');
-        subjekInput.required = true;
-    }
-});
-
 async function registerUser(e) {
     e.preventDefault();
     const ic = document.getElementById('reg_ic').value;
@@ -328,19 +194,12 @@ async function registerUser(e) {
     }
 
     const namaSekolah = schoolMap[kodSekolah];
-
     showLoading("Menyimpan pendaftaran...");
 
     try {
         if (peranan === 'PEGAWAI' || peranan === 'JURULATIH') {
             const hadMaksimum = peranan === 'PEGAWAI' ? 10 : 9;
-
-            const { count, error: countError } = await supabaseClient
-                .from('edaftar_bengkel_ppdag')
-                .select('*', { count: 'exact', head: true })
-                .eq('peranan', peranan);
-
-            if (countError) throw countError;
+            const count = await getExactRoleCount(peranan);
 
             if (count >= hadMaksimum) {
                 showToast(`Maaf, kuota pendaftaran ${peranan} telah penuh (${count}/${hadMaksimum}).`, "error");
@@ -365,14 +224,7 @@ async function registerUser(e) {
             insertData.sesi_2_tarikh = tarikhs.s2;
         }
 
-        const { data, error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .insert([insertData])
-            .select()
-            .single();
-
-        if (error) throw error;
-
+        const data = await registerNewUser(insertData);
         currentRecord = data;
 
         document.getElementById('register-form').reset();
@@ -386,8 +238,115 @@ async function registerUser(e) {
         showToast("Pendaftaran berjaya", "success");
     } catch (err) {
         console.error("Ralat daftar:", err);
-        showToast("Gagal mendaftar. No KP mungkin wujud atau ralat data.", "error");
+        showToast("Gagal mendaftar. Ralat data atau No KP mungkin wujud.", "error");
         showView('register');
+    }
+}
+
+function setupDashboard() {
+    if(!currentRecord) return;
+
+    document.getElementById('dash_nama').textContent = currentRecord.nama_penuh;
+    document.getElementById('dash_ic').textContent = currentRecord.ic_no;
+
+    const peranan = currentRecord.peranan || 'GURU';
+    document.getElementById('dash_peranan').textContent = peranan;
+    document.getElementById('dash_sekolah').textContent = `${currentRecord.kod_sekolah} - ${currentRecord.nama_sekolah}`;
+
+    const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
+
+    if (isExempt) {
+        document.getElementById('dash_subjek_container').classList.add('hidden-view');
+    } else {
+        document.getElementById('dash_subjek_container').classList.remove('hidden-view');
+        document.getElementById('dash_subjek').textContent = currentRecord.subjek;
+    }
+
+    const sessionsContainer = document.getElementById('sessions_container');
+    sessionsContainer.innerHTML = '';
+
+    const totalSessions = isExempt ? 8 : 2;
+    let allAttended = true;
+    let attendedDates = [];
+
+    for (let i = 1; i <= totalSessions; i++) {
+        const isAttended = currentRecord[`sesi_${i}_hadir`];
+        if (!isAttended) allAttended = false;
+
+        const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
+        const tarikhDisplay = formatDateDisplay(rawTarikh);
+
+        if (isExempt && isAttended) {
+             attendedDates.push(rawTarikh);
+        }
+
+        const div = document.createElement('div');
+        div.className = "border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm";
+
+        const infoDiv = document.createElement('div');
+        infoDiv.innerHTML = `<p class="font-bold text-slate-800">Sesi ${i}</p><p class="text-sm text-slate-500">${tarikhDisplay}</p>`;
+
+        const btn = document.createElement('button');
+        if (isAttended) {
+            btn.textContent = "Telah Hadir";
+            btn.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-green-100 text-green-800 cursor-not-allowed border border-green-200";
+            btn.disabled = true;
+        } else {
+            btn.textContent = "Sahkan Kehadiran";
+            btn.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm";
+            btn.onclick = () => handleAttendanceClick(i, rawTarikh, peranan);
+        }
+
+        div.appendChild(infoDiv);
+        div.appendChild(btn);
+        sessionsContainer.appendChild(div);
+    }
+
+    const sijilContainer = document.getElementById('sijil_container');
+    const sijilOptions = document.getElementById('sijil_options_container');
+    const sijilCheckboxes = document.getElementById('sijil_checkboxes');
+
+    sijilCheckboxes.innerHTML = '';
+
+    if (isExempt) {
+        if(attendedDates.length > 0) {
+            sijilContainer.classList.remove('hidden-view');
+            sijilOptions.classList.remove('hidden-view');
+            attendedDates.forEach((tarikhRaw) => {
+                const tarikhDisplay = formatDateDisplay(tarikhRaw);
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-2 text-sm text-slate-700 cursor-pointer";
+                label.innerHTML = `
+                    <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500 border-slate-300" value="${tarikhRaw}" checked>
+                    <span>${tarikhDisplay}</span>
+                `;
+                sijilCheckboxes.appendChild(label);
+            });
+        } else {
+             sijilContainer.classList.add('hidden-view');
+             sijilOptions.classList.add('hidden-view');
+        }
+    } else {
+        if(allAttended){
+           sijilContainer.classList.remove('hidden-view');
+        }else{
+           sijilContainer.classList.add('hidden-view');
+        }
+        sijilOptions.classList.add('hidden-view');
+    }
+
+    const btnPenilaian = document.getElementById('btn_penilaian');
+    if(allAttended) {
+        btnPenilaian.href = "https://docs.google.com/forms/d/e/1FAIpQLSe7_WJEFtBO5xi1rSsCqZliZerkAEtNy8qIQOYuYJnx7-lGRw/viewform";
+        btnPenilaian.className = "block w-full px-6 py-2.5 rounded-lg font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-sm pointer-events-auto opacity-100";
+        btnPenilaian.onclick = null;
+    } else {
+        btnPenilaian.removeAttribute('href');
+        btnPenilaian.className = "block w-full px-6 py-2.5 rounded-lg font-medium bg-slate-300 text-slate-500 cursor-not-allowed transition-colors pointer-events-none opacity-50";
+        btnPenilaian.onclick = (e) => {
+            e.preventDefault();
+            showToast("Sila sahkan kehadiran untuk semua sesi terlebih dahulu.", "error");
+        };
     }
 }
 
@@ -411,14 +370,13 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
             (position) => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
-
                 const distance = calculateDistance(userLat, userLng, WORKSHOP_LAT, WORKSHOP_LNG);
 
                 if (distance <= MAX_RADIUS_METERS) {
                     markAttendance(sesi);
                 } else {
                     showView('dashboard');
-                    showToast(`Pengesahan gagal. Anda berada ${Math.round(distance)} meter dari lokasi bengkel. Jarak dibenarkan: 200 meter.`, "error");
+                    showToast(`Pengesahan gagal. Anda berada ${Math.round(distance)} meter dari lokasi bengkel. (Had: 200m).`, "error");
                 }
             },
             (error) => {
@@ -451,22 +409,13 @@ async function handleAttendanceClick(sesi, tarikh, peranan) {
 
 async function markAttendance(sesi) {
     if(!currentRecord) return;
-
     showLoading("Mengesahkan kehadiran...");
 
     const updateData = {};
     updateData[`sesi_${sesi}_hadir`] = true;
 
     try {
-        const { data, error } = await supabaseClient
-            .from('edaftar_bengkel_ppdag')
-            .update(updateData)
-            .eq('id', currentRecord.id)
-            .select()
-            .single();
-
-        if (error) throw error;
-
+        const data = await updateRecord(currentRecord.id, updateData);
         currentRecord = data;
         setupDashboard();
         showView('dashboard');
@@ -478,317 +427,99 @@ async function markAttendance(sesi) {
     }
 }
 
-function getBase64Image(imgUrl) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.src = imgUrl;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(null);
-    });
-}
-
-async function getCursiveFontBase64() {
-    try {
-        const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/greatvibes/GreatVibes-Regular.ttf');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const buffer = await response.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary);
-    } catch (e) {
-        console.error("Gagal memuat turun font cursive:", e);
-        return null;
-    }
-}
-
-async function createPDFDocument() {
-    const peranan = currentRecord.peranan || 'GURU';
-    const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
-    let paparanTarikh = "";
+async function handleSijilClick() {
+    const isExempt = currentRecord.peranan === 'PEGAWAI' || currentRecord.peranan === 'JURULATIH';
+    let userSelectedDates = [];
 
     if (isExempt) {
         const checkboxes = document.querySelectorAll('.cert-checkbox:checked');
         if (checkboxes.length === 0) {
-            throw new Error("NO_DATE_SELECTED");
+             showToast("Sila pilih sekurang-kurangnya satu tarikh.", "error");
+             return;
         }
-        let tarikhMentah = [];
-        checkboxes.forEach(cb => {
-            tarikhMentah.push(cb.value);
-        });
-        paparanTarikh = getSmartDateRangeString(tarikhMentah);
-    } else {
-        paparanTarikh = getSmartDateRangeString([currentRecord.sesi_1_tarikh, currentRecord.sesi_2_tarikh]);
-    }
-
-    const { jsPDF } = window.jspdf;
-
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-    });
-
-    const logoData = await getBase64Image('ikonppd.png');
-    const signData = await getBase64Image('tttnhj.png');
-    const fontB64 = await getCursiveFontBase64();
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const centerX = pageWidth / 2;
-
-    if (logoData) {
-        doc.addImage(logoData, 'PNG', centerX - 25.3, 20, 50.6, 33.73);
-    }
-
-    if (fontB64) {
-        doc.addFileToVFS('Cursive.ttf', fontB64);
-        doc.addFont('Cursive.ttf', 'Cursive', 'normal');
-    }
-
-    const sijilTitle = isExempt ? "Sijil Penghargaan" : "Sijil Penyertaan";
-
-    if (fontB64) {
-        doc.setFont("Cursive", "normal");
-        doc.setFontSize(80);
-    } else {
-        doc.setFont("helvetica", "bolditalic");
-        doc.setFontSize(42);
-    }
-
-    doc.setTextColor(220, 38, 38);
-    doc.text(sijilTitle, centerX, 90, { align: 'center' });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(14);
-    doc.setTextColor(75, 85, 99);
-    doc.text("Dengan ini disahkan bahawa", centerX, 115, { align: 'center' });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.setTextColor(17, 24, 39);
-    doc.text(currentRecord.nama_penuh, centerX, 130, { align: 'center' });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(`No. Kad Pengenalan: ${currentRecord.ic_no}`, centerX, 140, { align: 'center' });
-
-    doc.setFontSize(14);
-    doc.setTextColor(75, 85, 99);
-    doc.text("telah menyertai", centerX, 155, { align: 'center' });
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(30, 64, 175);
-    doc.text("BENGKEL PEMBINAAN BAHAN PDPC BERBANTU AI", centerX, 170, { align: 'center' });
-    doc.text("GURU STEM DAERAH ALOR GAJAH", centerX, 178, { align: 'center' });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(14);
-    doc.setTextColor(75, 85, 99);
-
-    let paparanPeranan = "";
-    if (peranan === 'GURU') {
-        paparanPeranan = "sebagai PESERTA";
-    } else {
-        paparanPeranan = `sebagai ${peranan}`;
-    }
-
-    doc.text(paparanPeranan, centerX, 193, { align: 'center' });
-
-    doc.setFontSize(12);
-    doc.text("pada", centerX, 205, { align: 'center' });
-
-    doc.text(paparanTarikh, centerX, 213, { align: 'center', maxWidth: 170 });
-
-    if (signData) {
-        doc.addImage(signData, 'PNG', centerX - 48.3, 230, 96.6, 38.64);
-    }
-
-    return doc;
-}
-
-async function generateCertificate() {
-    const isExempt = currentRecord.peranan === 'PEGAWAI' || currentRecord.peranan === 'JURULATIH';
-
-    if (!isExempt) {
-        const isSesi1Hadir = currentRecord.sesi_1_hadir === true;
-        const isSesi2Hadir = currentRecord.sesi_2_hadir === true;
-
-        if (!isSesi1Hadir || !isSesi2Hadir) {
-            showToast("Sijil hanya boleh dimuat turun jika anda hadir kedua-dua sesi.", "error");
-            return;
-        }
+        checkboxes.forEach(cb => userSelectedDates.push(cb.value));
     }
 
     const btn = document.getElementById('btn_jana_sijil');
     if(!btn) return;
+    
     const originalText = btn.innerHTML;
     btn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menjana...`;
     btn.disabled = true;
 
     try {
-        const doc = await createPDFDocument();
+        const doc = await generateSingleCertificate(currentRecord, userSelectedDates);
         const safeFileName = currentRecord.nama_penuh.replace(/[^a-zA-Z0-9]/g, '_');
         doc.save(`Sijil_${safeFileName}.pdf`);
         showToast("Sijil berjaya dimuat turun.", "success");
     } catch (err) {
         console.error("Ralat sijil:", err);
-        if (err.message === "NO_DATE_SELECTED") {
-            showToast("Sila pilih sekurang-kurangnya satu tarikh.", "error");
-        } else {
-            showToast("Gagal menjana sijil.", "error");
-        }
+        showToast("Gagal menjana sijil.", "error");
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 }
 
-const btnJana = document.getElementById('btn_jana_sijil');
+document.addEventListener('DOMContentLoaded', () => {
+    checkRoleAvailability();
+    
+    document.getElementById('check-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const ic = document.getElementById('ic_check').value.trim();
+        if(ic) checkIC(ic);
+    });
 
-if(btnJana) btnJana.addEventListener('click', generateCertificate);
+    document.getElementById('register-form').addEventListener('submit', registerUser);
 
-function setupDashboard() {
-    if(!currentRecord) return;
+    document.getElementById('reg_peranan').addEventListener('change', (e) => {
+        const role = e.target.value;
+        const isExempt = role === 'PEGAWAI' || role === 'JURULATIH';
+        const subjekContainer = document.getElementById('subjek_container');
+        const subjekInput = document.getElementById('reg_subjek');
 
-    document.getElementById('dash_nama').textContent = currentRecord.nama_penuh;
-    document.getElementById('dash_ic').textContent = currentRecord.ic_no;
-
-    const peranan = currentRecord.peranan || 'GURU';
-    document.getElementById('dash_peranan').textContent = peranan;
-    document.getElementById('dash_sekolah').textContent = `${currentRecord.kod_sekolah} - ${currentRecord.nama_sekolah}`;
-
-    const isExempt = peranan === 'PEGAWAI' || peranan === 'JURULATIH';
-
-    if (isExempt) {
-        document.getElementById('dash_subjek_container').classList.add('hidden-view');
-    } else {
-        document.getElementById('dash_subjek_container').classList.remove('hidden-view');
-        document.getElementById('dash_subjek').textContent = currentRecord.subjek;
-    }
-
-    const sessionsContainer = document.getElementById('sessions_container');
-    sessionsContainer.innerHTML = '';
-
-    const totalSessions = isExempt ? 8 : 2;
-    let allAttended = true;
-
-    let attendedDates = [];
-
-    for (let i = 1; i <= totalSessions; i++) {
-        const isAttended = currentRecord[`sesi_${i}_hadir`];
-        if (!isAttended) allAttended = false;
-
-        const tarikhDisplay = isExempt ? formatDateDisplay(absoluteDates[i-1]) : formatDateDisplay(currentRecord[`sesi_${i}_tarikh`]);
-        const rawTarikh = isExempt ? absoluteDates[i-1] : currentRecord[`sesi_${i}_tarikh`];
-
-        if (isExempt && isAttended) {
-             attendedDates.push(rawTarikh);
-        }
-
-        const div = document.createElement('div');
-        div.className = "border rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-white shadow-sm";
-
-        const infoDiv = document.createElement('div');
-        infoDiv.innerHTML = `<p class="font-bold text-gray-800">Sesi ${i}</p><p class="text-sm text-gray-500">${tarikhDisplay}</p>`;
-
-        const btn = document.createElement('button');
-        if (isAttended) {
-            btn.textContent = "Telah Hadir";
-            btn.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-green-100 text-green-800 cursor-not-allowed border border-green-200";
-            btn.disabled = true;
+        if(isExempt) {
+            subjekContainer.classList.add('hidden-view');
+            subjekInput.required = false;
+            subjekInput.value = '';
+            document.getElementById('reg_tarikh_info').textContent = '';
         } else {
-            btn.textContent = "Sahkan Kehadiran";
-            btn.className = "w-full md:w-auto px-6 py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 shadow-sm";
-            btn.onclick = () => handleAttendanceClick(i, rawTarikh, peranan);
+            subjekContainer.classList.remove('hidden-view');
+            subjekInput.required = true;
         }
+    });
 
-        div.appendChild(infoDiv);
-        div.appendChild(btn);
-        sessionsContainer.appendChild(div);
+    document.getElementById('reg_subjek').addEventListener('change', (e) => {
+        const info = document.getElementById('reg_tarikh_info');
+        const val = e.target.value;
+        if(val && subjectDatesMap[val]) {
+            const dates = subjectDatesMap[val];
+            info.textContent = `Tarikh: Sesi 1 (${formatDateDisplay(dates.s1)}), Sesi 2 (${formatDateDisplay(dates.s2)})`;
+        } else {
+            info.textContent = "";
+        }
+    });
+
+    document.getElementById('btn-batal-reg').addEventListener('click', () => {
+        document.getElementById('ic_check').value = '';
+        document.getElementById('reg_tarikh_info').textContent = '';
+        document.getElementById('register-form').reset();
+
+        document.getElementById('subjek_container').classList.remove('hidden-view');
+        document.getElementById('reg_subjek').required = true;
+
+        if(tomSelectInstance) tomSelectInstance.clear();
+        showView('check');
+    });
+
+    document.getElementById('btn-keluar').addEventListener('click', () => {
+        currentRecord = null;
+        document.getElementById('ic_check').value = '';
+        showView('check');
+    });
+
+    const btnJana = document.getElementById('btn_jana_sijil');
+    if(btnJana) {
+        btnJana.addEventListener('click', handleSijilClick);
     }
-
-    const sijilContainer = document.getElementById('sijil_container');
-    const sijilOptions = document.getElementById('sijil_options_container');
-    const sijilCheckboxes = document.getElementById('sijil_checkboxes');
-
-    sijilContainer.classList.remove('hidden-view');
-    sijilCheckboxes.innerHTML = '';
-
-    if (isExempt) {
-        sijilOptions.classList.remove('hidden-view');
-        attendedDates.forEach((tarikhRaw) => {
-            const tarikhDisplay = formatDateDisplay(tarikhRaw);
-            const label = document.createElement('label');
-            label.className = "flex items-center space-x-2 text-sm text-gray-700 cursor-pointer";
-            label.innerHTML = `
-                <input type="checkbox" class="cert-checkbox rounded text-green-600 focus:ring-green-500" value="${tarikhRaw}" checked>
-                <span>${tarikhDisplay}</span>
-            `;
-            sijilCheckboxes.appendChild(label);
-        });
-    } else {
-        sijilOptions.classList.add('hidden-view');
-    }
-
-    const btnPenilaian = document.getElementById('btn_penilaian');
-    if(allAttended) {
-        btnPenilaian.href = "https://docs.google.com/forms/d/e/1FAIpQLSe7_WJEFtBO5xi1rSsCqZliZerkAEtNy8qIQOYuYJnx7-lGRw/viewform";
-        btnPenilaian.className = "block w-full px-6 py-2.5 rounded-lg font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-sm";
-        btnPenilaian.onclick = null;
-    } else {
-        btnPenilaian.removeAttribute('href');
-        btnPenilaian.className = "block w-full px-6 py-2.5 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed transition-colors";
-        btnPenilaian.onclick = (e) => {
-            e.preventDefault();
-            showToast("Sila sahkan kehadiran untuk semua sesi terlebih dahulu.", "error");
-        };
-    }
-}
-
-document.getElementById('check-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const ic = document.getElementById('ic_check').value.trim();
-    if(ic) checkIC(ic);
-});
-
-document.getElementById('register-form').addEventListener('submit', registerUser);
-
-document.getElementById('reg_subjek').addEventListener('change', (e) => {
-    const info = document.getElementById('reg_tarikh_info');
-    const val = e.target.value;
-    if(val && subjectDatesMap[val]) {
-        const dates = subjectDatesMap[val];
-        info.textContent = `Tarikh: Sesi 1 (${formatDateDisplay(dates.s1)}), Sesi 2 (${formatDateDisplay(dates.s2)})`;
-    } else {
-        info.textContent = "";
-    }
-});
-
-document.getElementById('btn-batal-reg').addEventListener('click', () => {
-    document.getElementById('ic_check').value = '';
-    document.getElementById('reg_tarikh_info').textContent = '';
-    document.getElementById('register-form').reset();
-
-    document.getElementById('subjek_container').classList.remove('hidden-view');
-    document.getElementById('reg_subjek').required = true;
-
-    if(tomSelectInstance) tomSelectInstance.clear();
-    showView('check');
-});
-
-document.getElementById('btn-keluar').addEventListener('click', () => {
-    currentRecord = null;
-    document.getElementById('ic_check').value = '';
-    showView('check');
 });
