@@ -19,107 +19,81 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     
-    <!-- Custom CSS -->
+    <!-- Custom CSS (JIKA ADA LAGI) -->
     <link rel="stylesheet" href="admin.css">
 
     <style>
         .hidden-view {
             display: none !important;
         }
-        /* Custom scrollbar for table and modals */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
-        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans">
+<body class="bg-blue-900 text-slate-100 antialiased min-h-screen">
 
     <!-- Modal: Makluman Am -->
-    <div id="msg-modal" class="hidden-view fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden z-10 transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-                <div class="bg-blue-100 text-blue-600 p-2 rounded-full">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h3 id="msg-title" class="text-lg font-bold text-slate-900">Makluman</h3>
+    <div id="msg-modal" class="hidden-view fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden z-10 border-0">
+            <div class="px-6 py-4 border-b border-blue-100">
+                <h3 id="msg-title" class="text-lg font-bold text-blue-900">Makluman</h3>
             </div>
-            <div class="px-6 py-5">
-                <p id="msg-body" class="text-slate-600 text-sm leading-relaxed">Mesej di sini</p>
+            <div class="px-6 py-4">
+                <p id="msg-body" class="text-slate-700 text-sm font-medium">Mesej di sini</p>
             </div>
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 text-right">
-                <button onclick="closeMsg()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Tutup</button>
+            <div class="px-6 py-3 bg-blue-50 text-right border-t border-blue-100">
+                <button onclick="closeMsg()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg transition-colors shadow-md focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">Tutup</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Sahkan Padam -->
-    <div id="delete-modal" class="hidden-view fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden z-10 transform transition-all">
-            <div class="px-6 py-4 border-b border-red-100 bg-red-50/50">
-                <h3 class="text-lg font-bold text-red-700 flex items-center">
-                    <div class="bg-red-100 text-red-600 p-1.5 rounded-full mr-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    </div>
+    <div id="delete-modal" class="hidden-view fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden z-10 border-0">
+            <div class="px-6 py-4 border-b border-red-100 bg-red-50">
+                <h3 class="text-lg font-bold text-red-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     Sahkan Padam
                 </h3>
             </div>
-            <div class="px-6 py-5">
-                <p class="text-slate-600 text-sm leading-relaxed">Adakah anda pasti mahu memadam rekod ini? Tindakan ini tidak boleh diundur dan data akan hilang selamanya.</p>
+            <div class="px-6 py-4">
+                <p class="text-slate-700 font-medium text-sm">Adakah anda pasti mahu memadam rekod ini? Tindakan ini tidak boleh diundur.</p>
             </div>
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onclick="closeDelete()" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl transition-colors focus:ring-2 focus:ring-slate-200">Batal</button>
-                <button onclick="confirmDelete()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Padam Rekod</button>
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onclick="closeDelete()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-sm font-bold rounded-lg transition-colors">Batal</button>
+                <button onclick="confirmDelete()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-md">Padam</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Kemaskini Maklumat -->
-    <div id="edit-modal" class="hidden-view fixed inset-0 z-[90] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden z-10 max-h-[90vh] flex flex-col transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                    Kemaskini Rekod
-                </h3>
-                <button onclick="closeEdit()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+    <div id="edit-modal" class="hidden-view fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden z-10 max-h-[90vh] flex flex-col border-0">
+            <div class="px-6 py-4 border-b border-blue-100 bg-blue-50">
+                <h3 class="text-lg font-bold text-blue-900">Kemaskini Rekod</h3>
             </div>
-            <div class="px-6 py-5 overflow-y-auto">
-                <form id="edit-form" class="space-y-5">
+            <div class="px-6 py-4 overflow-y-auto">
+                <form id="edit-form" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nama Penuh</label>
-                        <input type="text" id="edit_nama" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors uppercase text-sm outline-none">
+                        <label class="block text-sm font-bold text-blue-900 mb-1">Nama Penuh</label>
+                        <input type="text" id="edit_nama" required class="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none uppercase text-sm text-blue-900 font-medium bg-slate-50">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">No. Kad Pengenalan</label>
-                        <input type="text" id="edit_ic" required pattern="[0-9]{12}" class="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl text-sm outline-none cursor-not-allowed" readonly>
+                        <label class="block text-sm font-bold text-blue-900 mb-1">No. Kad Pengenalan</label>
+                        <input type="text" id="edit_ic" required pattern="[0-9]{12}" class="w-full px-3 py-2 bg-blue-100 border border-blue-200 rounded-lg text-sm text-blue-800 font-bold outline-none" readonly>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Peranan</label>
-                        <select id="edit_peranan" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm outline-none">
+                        <label class="block text-sm font-bold text-blue-900 mb-1">Peranan</label>
+                        <select id="edit_peranan" required class="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-sm text-blue-900 font-medium bg-slate-50">
                             <option value="GURU">GURU</option>
                             <option value="PEGAWAI">PEGAWAI</option>
                             <option value="JURULATIH">JURULATIH UTAMA</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Subjek <span class="text-xs font-normal text-slate-500">(Hanya Guru)</span></label>
-                        <select id="edit_subjek" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm outline-none">
+                        <label class="block text-sm font-bold text-blue-900 mb-1">Subjek (Hanya Guru)</label>
+                        <select id="edit_subjek" class="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-sm text-blue-900 font-medium bg-slate-50">
                             <option value="">-- Tiada / Pilih Subjek --</option>
                             <option value="MATEMATIK (SR)">MATEMATIK (SR)</option>
                             <option value="SAINS (SR)">SAINS (SR)</option>
@@ -130,137 +104,104 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">Sekolah</label>
-                        <select id="edit_sekolah" required class="w-full text-sm">
+                        <label class="block text-sm font-bold text-blue-900 mb-1">Sekolah</label>
+                        <select id="edit_sekolah" required class="w-full text-sm font-medium text-blue-900">
                             <option value="">-- Memuatkan Sekolah... --</option>
                         </select>
                     </div>
                 </form>
             </div>
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onclick="closeEdit()" class="px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl transition-colors focus:ring-2 focus:ring-slate-200">Batal</button>
-                <button type="submit" form="edit-form" id="btn-save-edit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Simpan Perubahan</button>
+            <div class="px-6 py-4 bg-slate-50 border-t border-blue-100 flex justify-end space-x-3">
+                <button onclick="closeEdit()" class="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-900 text-sm font-bold rounded-lg transition-colors">Batal</button>
+                <button type="submit" form="edit-form" id="btn-save-edit" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg transition-colors shadow-md focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">Simpan Perubahan</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Semakan Sekolah Tiada Wakil -->
-    <div id="modal-sekolah-tiada" class="hidden-view fixed inset-0 z-[90] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden z-10 flex flex-col max-h-[85vh] transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    Semakan Sekolah Tiada Wakil
-                </h3>
-                <button onclick="tutupModalSemakSekolah()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <div id="modal-sekolah-tiada" class="hidden-view fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden z-10 flex flex-col max-h-[85vh] border-0">
+            <div class="px-6 py-4 border-b border-blue-200 bg-blue-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-blue-900">Semakan Sekolah Tiada Wakil</h3>
+                <button onclick="tutupModalSemakSekolah()" class="text-blue-600 hover:text-blue-800 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                <span id="kategori-sekolah-label" class="font-semibold text-slate-700">KATEGORI: -</span>
-                <span id="jumlah-sekolah-tiada" class="mt-2 sm:mt-0 px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200 shadow-sm">Jumlah tiada wakil: 0</span>
+            <div class="p-4 bg-white border-b border-blue-100 text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center text-blue-900">
+                <span id="kategori-sekolah-label" class="font-bold">KATEGORI: -</span>
+                <span id="jumlah-sekolah-tiada" class="mt-1 sm:mt-0 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-md text-xs font-black shadow-inner">Jumlah tiada wakil: 0</span>
             </div>
-            <div class="flex-1 overflow-y-auto p-4 bg-slate-50/50">
-                <ul id="senarai-sekolah-tiada" class="divide-y divide-slate-100 bg-white rounded-xl border border-slate-200 shadow-sm text-sm overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-2 bg-slate-50">
+                <ul id="senarai-sekolah-tiada" class="divide-y divide-blue-50 bg-white rounded-lg border border-blue-100 shadow-sm text-sm font-medium text-slate-700">
                     <!-- Dinamik -->
                 </ul>
             </div>
-            <div class="px-6 py-4 bg-white border-t border-slate-100 text-right">
-                <button onclick="tutupModalSemakSekolah()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-500">Tutup Semakan</button>
+            <div class="px-6 py-3 bg-white border-t border-blue-100 text-right">
+                <button onclick="tutupModalSemakSekolah()" class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-lg transition-colors shadow-md">Tutup</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Semakan Kuota Sekolah (SM) -->
-    <div id="modal-kuota-sekolah" class="hidden-view fixed inset-0 z-[90] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden z-10 flex flex-col max-h-[85vh] transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    Semakan Kuota Sekolah (SM)
-                </h3>
-                <button onclick="tutupModalSemakKuota()" class="text-slate-400 hover:text-slate-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <div id="modal-kuota-sekolah" class="hidden-view fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity"></div>
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden z-10 flex flex-col max-h-[85vh] border-0">
+            <div class="px-6 py-4 border-b border-orange-200 bg-orange-100 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-orange-900">Semakan Kuota Sekolah (SM)</h3>
+                <button onclick="tutupModalSemakKuota()" class="text-orange-600 hover:text-orange-800 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="px-6 py-4 bg-orange-50 border-b border-orange-100 text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                <span id="kategori-kuota-label" class="font-semibold text-orange-900">KATEGORI: -</span>
-                <span id="jumlah-kuota-sekolah" class="mt-2 sm:mt-0 px-3 py-1 bg-white text-orange-700 rounded-full text-xs font-bold border border-orange-200 shadow-sm">Jumlah tidak capai kuota: 0</span>
+            <div class="p-4 bg-white border-b border-orange-100 text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center text-orange-900">
+                <span id="kategori-kuota-label" class="font-bold">KATEGORI: -</span>
+                <span id="jumlah-kuota-sekolah" class="mt-1 sm:mt-0 px-3 py-1.5 bg-orange-100 text-orange-800 rounded-md text-xs font-black shadow-inner">Jumlah tidak capai kuota: 0</span>
             </div>
-            <div class="flex-1 overflow-y-auto p-4 bg-slate-50/50">
-                <ul id="senarai-kuota-sekolah" class="divide-y divide-slate-100 bg-white rounded-xl border border-slate-200 shadow-sm text-sm overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-2 bg-slate-50">
+                <ul id="senarai-kuota-sekolah" class="bg-white rounded-lg border border-orange-100 shadow-sm text-sm font-medium text-slate-700 divide-y divide-orange-50">
                     <!-- Dinamik -->
                 </ul>
             </div>
-            <div class="px-6 py-4 bg-white border-t border-slate-100 text-right">
-                <button onclick="tutupModalSemakKuota()" class="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-slate-500">Tutup Semakan</button>
+            <div class="px-6 py-3 bg-white border-t border-orange-100 text-right">
+                <button onclick="tutupModalSemakKuota()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-lg transition-colors shadow-md">Tutup</button>
             </div>
         </div>
     </div>
 
     <!-- VIEW: Login Admin -->
-    <div id="login-view" class="flex-grow flex items-center justify-center p-4">
-        <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-xl max-w-md w-full border border-slate-100 text-center transform transition-all hover:-translate-y-1 hover:shadow-2xl">
-            <div class="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-100">
-                <img src="ikonppd.png" alt="Logo PPDAG" class="h-16 object-contain">
-            </div>
-            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Log Masuk Admin</h1>
-            <p class="text-sm text-slate-500 mb-8 mt-1 font-medium">Sistem eDaftar PPD Alor Gajah</p>
+    <div id="login-view" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full border-0 text-center">
+            <!-- Logo dibesarkan dan tanpa border/frame -->
+            <img src="ikonppd.png" alt="Logo PPDAG" class="h-28 mx-auto mb-6 object-contain border-none shadow-none outline-none">
+            <h1 class="text-2xl font-bold text-blue-900 tracking-tight">Log Masuk Admin</h1>
+            <p class="text-sm font-medium text-blue-600 mb-8">Sistem eDaftar PPDAG</p>
             
             <form id="login-form" class="space-y-5 text-left">
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1.5">Kata Laluan Akses</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                        </div>
-                        <input type="password" id="admin_pwd" required placeholder="Masukkan kata laluan..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm font-medium">
-                    </div>
-                    <p id="login-error" class="text-red-500 text-xs font-semibold mt-2 hidden-view flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                        Kata laluan tidak sah.
-                    </p>
+                    <label class="block text-sm font-bold text-blue-900 mb-1">Kata Laluan</label>
+                    <input type="password" id="admin_pwd" required class="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none bg-slate-50 text-blue-900 font-medium">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex justify-center items-center gap-2">
-                    Log Masuk Sistem
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </button>
+                <p id="login-error" class="text-red-600 text-sm font-bold hidden-view">Kata laluan salah.</p>
+                <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-lg transition-colors shadow-md focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">Log Masuk</button>
             </form>
             <div class="mt-8 text-sm">
-                <a href="index.html" class="text-slate-500 hover:text-blue-600 font-medium transition-colors inline-flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Kembali ke Laman Utama
-                </a>
+                <a href="index.html" class="text-blue-500 hover:text-blue-700 font-bold hover:underline transition-colors">&larr; Kembali ke Utama</a>
             </div>
         </div>
     </div>
 
     <!-- VIEW: Dashboard Admin -->
-    <div id="dashboard-view" class="hidden-view flex-grow flex flex-col">
+    <div id="dashboard-view" class="hidden-view min-h-screen flex flex-col">
         <!-- Top Nav -->
-        <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm sticky top-0 z-30">
+        <header class="bg-blue-900 border-b border-blue-800 shadow-md sticky top-0 z-30">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <img src="ikonppd.png" alt="Logo PPDAG" class="h-9 object-contain">
-                    <div>
-                        <h1 class="text-lg font-bold text-slate-900 leading-tight">Admin eDaftar</h1>
-                        <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-widest hidden sm:block">PPD Alor Gajah</p>
-                    </div>
+                    <img src="ikonppd.png" alt="Logo PPDAG" class="h-10 object-contain border-none shadow-none">
+                    <h1 class="text-lg font-bold text-white hidden sm:block tracking-wide">Admin eDaftar PPDAG</h1>
                 </div>
-                <div class="flex items-center gap-4 sm:gap-6">
-                    <a href="index.html" class="text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                        <span class="hidden sm:inline">Utama</span>
-                    </a>
-                    <div class="h-4 w-px bg-slate-300"></div>
-                    <button id="btn-logout" class="text-sm font-semibold text-rose-600 hover:text-rose-800 transition-colors flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        <span class="hidden sm:inline">Log Keluar</span>
-                    </button>
+                <div class="flex items-center gap-6">
+                    <a href="index.html" class="text-sm font-bold text-blue-200 hover:text-white transition-colors">Utama</a>
+                    <button id="btn-logout" class="text-sm font-bold text-blue-200 hover:text-red-400 transition-colors">Log Keluar</button>
                 </div>
             </div>
         </header>
@@ -268,11 +209,11 @@
         <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
             <!-- Kawalan Saringan & Tindakan -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="bg-white p-6 rounded-xl shadow-2xl border-0">
                 <div class="flex flex-col md:flex-row md:items-end gap-4">
                     <div class="flex-1">
-                        <label class="block text-sm font-bold text-slate-800 mb-2">Saring Mengikut Kumpulan Bengkel</label>
-                        <select id="filter_subjek" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium outline-none transition-colors">
+                        <label class="block text-sm font-bold text-blue-900 mb-2">Saring Mengikut Kumpulan</label>
+                        <select id="filter_subjek" class="w-full px-4 py-3 bg-slate-50 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-600 text-sm font-bold text-blue-900 outline-none">
                             <option value="">-- Sila Pilih Kumpulan --</option>
                             <option value="G1">MATEMATIK (SR) - 20 & 21 Julai 2026</option>
                             <option value="G2">SAINS (SR) - 22 & 23 Julai 2026</option>
@@ -281,103 +222,64 @@
                         </select>
                     </div>
                     <div class="flex-shrink-0 flex gap-2 w-full md:w-auto">
-                        <button id="btn-cari" class="flex-1 md:flex-none px-8 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-900 transition-colors shadow-md focus:ring-2 focus:ring-slate-500 focus:ring-offset-1 flex justify-center items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            Papar Data
-                        </button>
+                        <button id="btn-cari" class="flex-1 md:flex-none px-8 py-3 bg-blue-700 text-white text-sm font-bold rounded-lg hover:bg-blue-800 transition-colors shadow-md focus:ring-2 focus:ring-blue-600 focus:ring-offset-2">Papar Data</button>
                     </div>
                 </div>
                 
-                <div class="mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-3 items-center">
-                    <button id="btn-pdf" disabled class="px-4 py-2 bg-rose-50 text-rose-700 border border-rose-200 text-sm font-bold rounded-lg hover:bg-rose-100 hover:border-rose-300 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
-                        Laporan PDF
-                    </button>
-                    <button id="btn-sijil-pukal" disabled class="px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold rounded-lg hover:bg-emerald-100 hover:border-emerald-300 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
-                        Sijil Pukal
-                    </button>
-                    <div class="h-6 w-px bg-slate-200 hidden sm:block mx-1"></div>
-                    <button id="btn-semak-sekolah" onclick="bukaModalSemakSekolah()" class="hidden-view px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 text-sm font-bold rounded-lg hover:bg-blue-100 transition-colors shadow-sm">Semak Sekolah Tiada Wakil</button>
-                    <button id="btn-semak-kuota" onclick="bukaModalSemakKuota()" class="hidden-view px-4 py-2 bg-orange-50 text-orange-700 border border-orange-200 text-sm font-bold rounded-lg hover:bg-orange-100 transition-colors shadow-sm">Semak Kuota (SM)</button>
+                <div class="mt-6 pt-5 border-t border-blue-100 flex flex-wrap gap-3 items-center">
+                    <button id="btn-pdf" disabled class="px-5 py-2.5 bg-rose-600 text-white text-sm font-bold rounded-lg hover:bg-rose-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">PDF Kehadiran</button>
+                    <button id="btn-sijil-pukal" disabled class="px-5 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed">Muat Turun Sijil</button>
+                    <button id="btn-semak-sekolah" onclick="bukaModalSemakSekolah()" class="hidden-view px-5 py-2.5 bg-blue-800 text-white text-sm font-bold rounded-lg hover:bg-blue-900 transition-colors shadow-md">Semak Sekolah Tiada Wakil</button>
+                    <button id="btn-semak-kuota" onclick="bukaModalSemakKuota()" class="hidden-view px-5 py-2.5 bg-orange-600 text-white text-sm font-bold rounded-lg hover:bg-orange-700 transition-colors shadow-md">Semak Kuota Sekolah</button>
                     
                     <!-- Tindakan Pukal Kehadiran -->
-                    <div class="w-full mt-2 xl:w-auto xl:mt-0 flex flex-wrap gap-2 xl:ml-auto">
-                        <button id="btn-pukal-hadir-1" class="hidden-view px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded-md hover:bg-green-600 transition-colors shadow-sm">Hadir Semua S1</button>
-                        <button id="btn-pukal-hadir-2" class="hidden-view px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded-md hover:bg-green-600 transition-colors shadow-sm">Hadir Semua S2</button>
-                        <button id="btn-pukal-tak-hadir-1" class="hidden-view px-3 py-1.5 bg-slate-400 text-white text-xs font-bold rounded-md hover:bg-slate-500 transition-colors shadow-sm">T.Hadir Semua S1</button>
-                        <button id="btn-pukal-tak-hadir-2" class="hidden-view px-3 py-1.5 bg-slate-400 text-white text-xs font-bold rounded-md hover:bg-slate-500 transition-colors shadow-sm">T.Hadir Semua S2</button>
+                    <div class="w-full mt-3 lg:w-auto lg:mt-0 flex flex-wrap gap-2">
+                        <button id="btn-pukal-hadir-1" class="hidden-view px-4 py-2 bg-green-100 text-green-800 border border-green-300 text-xs font-black rounded-lg hover:bg-green-200 transition-colors shadow-sm">Hadir Semua Sesi 1</button>
+                        <button id="btn-pukal-hadir-2" class="hidden-view px-4 py-2 bg-green-100 text-green-800 border border-green-300 text-xs font-black rounded-lg hover:bg-green-200 transition-colors shadow-sm">Hadir Semua Sesi 2</button>
+                        <button id="btn-pukal-tak-hadir-1" class="hidden-view px-4 py-2 bg-red-100 text-red-800 border border-red-300 text-xs font-black rounded-lg hover:bg-red-200 transition-colors shadow-sm">Tidak Hadir Semua Sesi 1</button>
+                        <button id="btn-pukal-tak-hadir-2" class="hidden-view px-4 py-2 bg-red-100 text-red-800 border border-red-300 text-xs font-black rounded-lg hover:bg-red-200 transition-colors shadow-sm">Tidak Hadir Semua Sesi 2</button>
                     </div>
                 </div>
             </div>
 
             <!-- Kad Ringkasan (Keseluruhan Pangkalan Data) -->
             <div id="summary-cards" class="hidden-view grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group relative overflow-hidden" onclick="tapisSenarai('PEGAWAI')">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Pegawai</p>
-                            <div class="bg-blue-100 text-blue-600 p-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                            </div>
-                        </div>
-                        <h4 id="sum_pegawai" class="text-3xl font-black text-slate-800 group-hover:text-blue-700 transition-colors">0 / 10</h4>
-                        <p class="text-xs font-medium text-blue-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Tapis senarai &rarr;</p>
-                    </div>
+                <div class="bg-white p-5 rounded-xl shadow-2xl border-0 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all group" onclick="tapisSenarai('PEGAWAI')">
+                    <p class="text-xs font-black text-blue-500 uppercase tracking-widest mb-2">Pegawai</p>
+                    <h4 id="sum_pegawai" class="text-3xl font-black text-blue-900 group-hover:text-blue-600 transition-colors">0 / 10</h4>
+                    <p class="text-[11px] font-bold text-slate-400 mt-2">Klik untuk papar</p>
                 </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-amber-400 hover:shadow-md transition-all group relative overflow-hidden" onclick="tapisSenarai('JURULATIH')">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-amber-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Jurulatih</p>
-                            <div class="bg-amber-100 text-amber-600 p-1.5 rounded-lg group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                            </div>
-                        </div>
-                        <h4 id="sum_jurulatih" class="text-3xl font-black text-slate-800 group-hover:text-amber-600 transition-colors">0 / 9</h4>
-                        <p class="text-xs font-medium text-amber-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Tapis senarai &rarr;</p>
-                    </div>
+                <div class="bg-white p-5 rounded-xl shadow-2xl border-0 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all group" onclick="tapisSenarai('JURULATIH')">
+                    <p class="text-xs font-black text-blue-500 uppercase tracking-widest mb-2">Jurulatih</p>
+                    <h4 id="sum_jurulatih" class="text-3xl font-black text-blue-900 group-hover:text-blue-600 transition-colors">0 / 9</h4>
+                    <p class="text-[11px] font-bold text-slate-400 mt-2">Klik untuk papar</p>
                 </div>
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-emerald-400 hover:shadow-md transition-all group relative overflow-hidden" onclick="tapisSenarai('GURU')">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-emerald-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Guru (Subjek)</p>
-                            <div class="bg-emerald-100 text-emerald-600 p-1.5 rounded-lg group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                            </div>
-                        </div>
-                        <h4 id="sum_guru" class="text-3xl font-black text-slate-800 group-hover:text-emerald-600 transition-colors">0</h4>
-                        <p class="text-xs font-medium text-emerald-600 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Tapis senarai &rarr;</p>
-                    </div>
+                <div class="bg-white p-5 rounded-xl shadow-2xl border-0 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all group" onclick="tapisSenarai('GURU')">
+                    <p class="text-xs font-black text-blue-500 uppercase tracking-widest mb-2">Guru (Subjek)</p>
+                    <h4 id="sum_guru" class="text-3xl font-black text-blue-900 group-hover:text-blue-600 transition-colors">0</h4>
+                    <p class="text-[11px] font-bold text-slate-400 mt-2">Klik untuk papar</p>
                 </div>
             </div>
 
             <!-- Jadual Data -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-white rounded-xl shadow-2xl border-0 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse whitespace-nowrap md:whitespace-normal">
+                    <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] uppercase font-bold text-slate-500 tracking-wider">
-                                <th class="px-4 py-4 w-12 text-center">
-                                    <input type="checkbox" id="check-all-cert" disabled class="rounded text-blue-600 focus:ring-blue-500 cursor-pointer" title="Pilih Semua untuk Sijil">
+                            <tr class="bg-blue-50 border-b border-blue-100 text-xs uppercase font-black text-blue-800 tracking-wider">
+                                <th class="px-5 py-4 w-12 text-center">
+                                    <input type="checkbox" id="check-all-cert" disabled class="rounded text-blue-700 focus:ring-blue-600 w-4 h-4 cursor-pointer" title="Pilih Semua untuk Sijil">
                                 </th>
-                                <th class="px-4 py-4 w-12 text-center">Bil</th>
-                                <th class="px-4 py-4 min-w-[220px]">Maklumat Peserta</th>
-                                <th class="px-4 py-4 min-w-[250px]">Sekolah</th>
-                                <th class="px-4 py-4 w-40 text-center">Status Kehadiran</th>
-                                <th class="px-4 py-4 w-28 text-right pr-6">Tindakan</th>
+                                <th class="px-5 py-4 w-12 text-center">Bil</th>
+                                <th class="px-5 py-4 min-w-[200px]">Maklumat Peserta</th>
+                                <th class="px-5 py-4 min-w-[250px]">Sekolah</th>
+                                <th class="px-5 py-4 w-40 text-center">Status Kehadiran</th>
+                                <th class="px-5 py-4 w-28 text-right">Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-100 text-sm">
+                        <tbody id="table-body" class="divide-y divide-slate-100">
                             <tr>
-                                <td colspan="6" class="px-6 py-16 text-center">
-                                    <div class="inline-flex flex-col items-center justify-center text-slate-400">
-                                        <svg class="w-12 h-12 mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                                        <p class="font-medium text-sm">Sila pilih kumpulan subjek dan klik "Papar Data".</p>
-                                    </div>
-                                </td>
+                                <td colspan="6" class="px-6 py-16 text-center text-sm font-bold text-blue-400 bg-white">Sila pilih kumpulan subjek dan klik "Papar Data".</td>
                             </tr>
                         </tbody>
                     </table>
