@@ -169,3 +169,22 @@ export async function deleteRecord(id) {
 
     if (error) throw error;
 }
+
+/**
+ * Mengambil senarai peserta dengan peranan 'GURU' dari sekolah 'M030' 
+ * yang BUKAN sebahagian daripada senarai subjek/kumpulan semasa.
+ * @param {Array<string>} currentSubjects - Senarai subjek kumpulan yang aktif/sedang dipaparkan
+ * @returns {Promise<Array>} Senarai peserta yang layak untuk ditambah
+ */
+export async function getEligibleGurus(currentSubjects) {
+    const { data, error } = await supabase
+        .from(MAIN_TABLE)
+        .select('id, nama_penuh, ic_no, subjek')
+        .eq('peranan', 'GURU')
+        .eq('kod_sekolah', 'M030')
+        .not('subjek', 'in', `(${currentSubjects.join(',')})`)
+        .order('nama_penuh', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}

@@ -1,5 +1,5 @@
 import { ADMIN_PWD, groupConfig, subjectDatesMap, absoluteDates, masterSekolah } from './config.js';
-import { getSchoolsData, getAdminDashboardStats, getAdminTableData, deleteRecord, updateRecord } from './data.js';
+import { getSchoolsData, getAdminDashboardStats, getAdminTableData, deleteRecord, updateRecord, getEligibleGurus } from './data.js';
 import { generateBulkCertificates, generateAttendanceReport } from './pdf-service.js';
 import { getSmartDateRangeString, formatDateDisplay } from './utils.js';
 
@@ -116,7 +116,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     document.getElementById('summary-cards').classList.add('hidden-view');
 
     // Sembunyikan butang tambahan
-    const hiddenBtns = ['btn-semak-sekolah', 'btn-reset-filter', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2'];
+    const hiddenBtns = ['btn-semak-sekolah', 'btn-reset-filter', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2', 'btn-buka-tambah-ppd'];
     hiddenBtns.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.classList.add('hidden-view');
@@ -182,7 +182,7 @@ async function fetchTableData() {
             tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
 
             // Sembunyikan butang tindakan kumpulan
-            ['btn-semak-sekolah', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2'].forEach(id => {
+            ['btn-semak-sekolah', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2', 'btn-buka-tambah-ppd'].forEach(id => {
                 const b = document.getElementById(id);
                 if(b) b.classList.add('hidden-view');
             });
@@ -200,7 +200,8 @@ async function fetchTableData() {
             { id: 'btn-pukal-hadir-1', show: true },
             { id: 'btn-pukal-hadir-2', show: true },
             { id: 'btn-pukal-tak-hadir-1', show: true },
-            { id: 'btn-pukal-tak-hadir-2', show: true }
+            { id: 'btn-pukal-tak-hadir-2', show: true },
+            { id: 'btn-buka-tambah-ppd', show: true }
         ];
 
         toggles.forEach(t => {
@@ -540,7 +541,128 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 });
 
 // ==========================================
-// SEMAKAN SEKOLAH (MODAL DATA)
+// TAMBAH PESERTA PPD (MODAL DATA)
+// ==========================================
+window.bukaModalTambahPPD = async function() {
+    const selGroup = document.getElementById('filter_subjek').value;
+    if (!selGroup) {
+        showMsg("Ralat", "Sila pilih kumpulan subjek dan papar data terlebih dahulu.");
+        return;
+    }
+
+    const conf = groupConfig[selGroup];
+    document.getElementById('kumpulan-semasa-label').textContent = `KUMPULAN SEMASA: ${conf.label}`;
+    
+    // Tetapkan pilihan subjek dalam modal berdasarkan kumpulan yang aktif
+    const selectPilihan = document.getElementById('pilihan_subjek_ppd');
+    selectPilihan.innerHTML = '';
+    conf.subjects.forEach(subjek => {
+        const option = document.createElement('option');
+        option.value = subjek;
+        option.textContent = subjek;
+        selectPilihan.appendChild(option);
+    });
+
+    const btnSahkan = document.getElementById('btn-sahkan-tambah-ppd');
+    btnSahkan.disabled = true;
+    btnSahkan.innerHTML = `<svg class="animate-spin h-4 w-4 mr-2 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memuatkan...`;
+
+    document.getElementById('modal-tambah-ppd').classList.remove('hidden-view');
+
+    try {
+        const eligibleGurus = await getEligibleGurus(conf.subjects);
+        document.getElementById('jumlah-guru-ppd').textContent = `Jumlah layak: ${eligibleGurus.length}`;
+
+        const container = document.getElementById('senarai-guru-ppd');
+        container.innerHTML = '';
+
+        if (eligibleGurus.length === 0) {
+            container.innerHTML = '<p class="text-sm text-center text-slate-500 py-6">Tiada rekod GURU dari M030 yang berada di luar dari kumpulan semasa.</p>';
+            btnSahkan.disabled = true;
+            btnSahkan.textContent = "Sahkan & Tambah";
+            return;
+        }
+
+        eligibleGurus.forEach((guru, index) => {
+            const div = document.createElement('div');
+            div.className = "flex flex-col sm:flex-row sm:items-center justify-between p-3 border border-slate-200 rounded-lg bg-slate-50 hover:bg-emerald-50 transition-colors";
+            
+            div.innerHTML = `
+                <div class="flex items-center mb-2 sm:mb-0">
+                    <input type="checkbox" id="ppd_guru_${guru.id}" value="${guru.id}" class="chk-tambah-ppd w-4 h-4 text-emerald-600 bg-white border-slate-300 rounded focus:ring-emerald-500">
+                    <label for="ppd_guru_${guru.id}" class="ml-3 text-sm font-bold text-slate-800 cursor-pointer flex-1">
+                        ${index + 1}. ${guru.nama_penuh}
+                        <span class="block text-xs text-slate-500 font-medium font-normal mt-0.5">KP: ${guru.ic_no} | Subjek asal: ${guru.subjek || 'Tiada'}</span>
+                    </label>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        btnSahkan.disabled = false;
+        btnSahkan.textContent = "Sahkan & Tambah";
+
+    } catch (err) {
+        console.error("Ralat mengambil senarai guru M030:", err);
+        document.getElementById('senarai-guru-ppd').innerHTML = '<p class="text-sm text-center text-red-500 py-6">Berlaku ralat sistem semasa mengambil maklumat peserta.</p>';
+        btnSahkan.disabled = true;
+        btnSahkan.textContent = "Sahkan & Tambah";
+    }
+};
+
+window.tutupModalTambahPPD = function() {
+    document.getElementById('modal-tambah-ppd').classList.add('hidden-view');
+};
+
+window.sahkanTambahPPD = async function() {
+    const checkedBoxes = document.querySelectorAll('.chk-tambah-ppd:checked');
+    if (checkedBoxes.length === 0) {
+        showMsg("Tiada Pilihan", "Sila tandakan sekurang-kurangnya satu peserta untuk ditambah.");
+        return;
+    }
+
+    const subjekPilihan = document.getElementById('pilihan_subjek_ppd').value;
+    if (!subjekPilihan || !subjectDatesMap[subjekPilihan]) {
+        showMsg("Ralat", "Sila pilih subjek sasaran yang sah.");
+        return;
+    }
+
+    const dates = subjectDatesMap[subjekPilihan];
+    const updateData = {
+        subjek: subjekPilihan,
+        sesi_1_tarikh: dates.s1,
+        sesi_2_tarikh: dates.s2
+    };
+
+    const btn = document.getElementById('btn-sahkan-tambah-ppd');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Menyimpan...";
+
+    try {
+        const updatePromises = Array.from(checkedBoxes).map(cb => {
+            return updateRecord(cb.value, updateData);
+        });
+
+        await Promise.all(updatePromises);
+        
+        tutupModalTambahPPD();
+        showMsg("Berjaya", `${checkedBoxes.length} peserta (M030) berjaya didaftarkan ke subjek ${subjekPilihan}.`);
+        
+        // Memuat semula jadual semasa
+        fetchTableData();
+
+    } catch (err) {
+        console.error("Ralat menambah peserta PPD:", err);
+        showMsg("Ralat", "Gagal mengemas kini sebahagian atau semua rekod pendaftaran.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+};
+
+// ==========================================
+// SEMAKAN SEKOLAH & KUOTA (MODAL DATA)
 // ==========================================
 window.bukaModalSemakSekolah = function() {
     const selGroup = document.getElementById('filter_subjek').value;
