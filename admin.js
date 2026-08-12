@@ -91,7 +91,7 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
         document.getElementById('dashboard-view').classList.remove('hidden-view');
         document.getElementById('admin_pwd').value = '';
         document.getElementById('login-error').classList.add('hidden-view');
-        
+
         // Memuatkan konfigurasi awal setelah log masuk berjaya
         loadSchools();
         loadDashboardStats();
@@ -105,14 +105,14 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     document.getElementById('login-view').classList.remove('hidden-view');
     document.getElementById('table-body').innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">Sila pilih kumpulan subjek dan klik "Papar".</td></tr>';
     document.getElementById('filter_subjek').value = '';
-    
+
     // Matikan kawalan data
     const btns = ['btn-pdf', 'btn-sijil-pukal', 'check-all-cert'];
     btns.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = true;
     });
-    
+
     document.getElementById('summary-cards').classList.add('hidden-view');
 
     // Sembunyikan butang tambahan
@@ -133,7 +133,7 @@ async function fetchTableData() {
     const selGroup = document.getElementById('filter_subjek').value;
     const tbody = document.getElementById('table-body');
     const summary = document.getElementById('summary-cards');
-    
+
     // Tetapan butang UI
     const controls = {
         pdf: document.getElementById('btn-pdf'),
@@ -155,7 +155,7 @@ async function fetchTableData() {
 
     // Loading State
     tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center"><svg class="animate-spin h-6 w-6 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></td></tr>';
-    
+
     Object.values(controls).forEach(c => { if(c) c.disabled = true; });
     if(controls.checkAll) controls.checkAll.checked = false;
     currentData = [];
@@ -180,7 +180,7 @@ async function fetchTableData() {
 
         if(guruData.length === 0 && pegData.length === 0 && jurData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-sm text-slate-500">Tiada rekod pendaftaran untuk subjek ini.</td></tr>';
-            
+
             // Sembunyikan butang tindakan kumpulan
             ['btn-semak-sekolah', 'btn-semak-kuota', 'btn-pukal-hadir-1', 'btn-pukal-hadir-2', 'btn-pukal-tak-hadir-1', 'btn-pukal-tak-hadir-2'].forEach(id => {
                 const b = document.getElementById(id);
@@ -190,7 +190,7 @@ async function fetchTableData() {
         }
 
         renderTable(currentFilter);
-        
+
         Object.values(controls).forEach(c => { if(c) c.disabled = false; });
 
         // Kawalan pendedahan elemen Semakan & Tindakan
@@ -454,10 +454,10 @@ window.confirmDelete = async function() {
     if(!deletingId) return;
     try {
         await deleteRecord(deletingId);
-        
+
         closeDelete();
         loadDashboardStats();
-        
+
         if(document.getElementById('filter_subjek').value !== '') {
             fetchTableData();
         }
@@ -524,7 +524,7 @@ document.getElementById('edit-form').addEventListener('submit', async (e) => {
 
         closeEdit();
         loadDashboardStats();
-        
+
         if(document.getElementById('filter_subjek').value !== '') {
             fetchTableData();
         }
@@ -641,13 +641,25 @@ window.bukaModalSemakKuota = function() {
     ul.innerHTML = '';
 
     if (kurangKuotaSchools.length === 0) {
-        ul.innerHTML = '<li class="p-3 text-center text-emerald-600 font-medium">Cemerlang! Semua sekolah Menengah telah mencapai kuota pendaftaran minimum (3 orang).</li>';
+        ul.innerHTML = '<li class="p-3 text-center text-emerald-600 font-medium">Cemerlang! Semua sekolah Menengah telah mencapai kuota pendaftaran (3 orang).</li>';
     } else {
         kurangKuotaSchools.forEach((s, index) => {
             const li = document.createElement('li');
             li.className = 'p-3 hover:bg-rose-50 flex flex-col md:flex-row md:justify-between md:items-center border-b border-slate-100 last:border-0';
 
-            const badgeWarna = s.jumlahDaftar === 0 ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-orange-100 text-orange-800 border-orange-200';
+            // Menentukan warna lencana dan teks berdasarkan jumlah daftar
+            let badgeWarna = '';
+            let teksStatus = '';
+
+            if (s.jumlahDaftar === 0) {
+                // Tiada wakil langsung
+                badgeWarna = 'bg-rose-100 text-rose-800 border-rose-200';
+                teksStatus = 'Tiada Wakil (0/3)';
+            } else {
+                // Ada wakil tapi belum cukup kuota (1 atau 2)
+                badgeWarna = 'bg-orange-100 text-orange-800 border-orange-200';
+                teksStatus = `Kurang Kuota (${s.jumlahDaftar}/3)`;
+            }
 
             li.innerHTML = `
                 <div>
@@ -655,7 +667,7 @@ window.bukaModalSemakKuota = function() {
                     <div class="mt-0.5 text-[10px] text-slate-500">${s.kod} | ${s.jenis}</div>
                 </div>
                 <div class="mt-2 md:mt-0 text-xs font-bold px-3 py-1 rounded border ${badgeWarna} w-max">
-                    Daftar: ${s.jumlahDaftar} / 3
+                    ${teksStatus}
                 </div>
             `;
             ul.appendChild(li);
@@ -712,7 +724,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
     try {
         const doc = await generateAttendanceReport(fullyAttendedData, selGroup, currentFilter);
-        
+
         const roleSuffix = currentFilter ? `_${currentFilter}` : '';
         const safeFileName = conf.label.replace(/[^a-zA-Z0-9]/g, '_');
         doc.save(`Kehadiran_Penuh_${safeFileName}${roleSuffix}.pdf`);
@@ -748,10 +760,10 @@ document.getElementById('btn-sijil-pukal').addEventListener('click', async () =>
         }
 
         const doc = await generateBulkCertificates(records);
-        
+
         const selGroup = document.getElementById('filter_subjek').value;
         const groupLabel = groupConfig[selGroup] ? groupConfig[selGroup].label.replace(/[^a-zA-Z0-9]/g, '_') : 'Pukal';
-        
+
         doc.save(`Sijil_Pukal_${groupLabel}.pdf`);
         showMsg("Berjaya", `${records.length} sijil peserta telah digabungkan ke dalam satu fail PDF dan sedang dimuat turun.`);
     } catch (err) {
