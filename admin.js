@@ -563,7 +563,7 @@ window.bukaModalSemakSekolah = function() {
     const targetSchools = masterSekolah.filter(s => validTypes.includes(s.jenis));
 
     const registeredCodes = currentData
-        .filter(r => !r.isDummy && r.kod_sekolah)
+        .filter(r => !r.isDummy && r.peranan === 'GURU' && r.kod_sekolah)
         .map(r => r.kod_sekolah);
 
     const missingSchools = targetSchools.filter(s => !registeredCodes.includes(s.kod));
